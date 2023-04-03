@@ -80,7 +80,7 @@ Nota: C es la bandera de acarreo.
 ```asm
 Ejemplo_de_uso:         // R1:R0 ← R1:R0 + R3:R2
     ADDS R0,R2          // R0,banderas ← R0 + R2
-    ADC R1,R2           // R1 ← R1 + R2 + C
+    ADC R1,R3           // R1 ← R1 + R3 + C
 ```
 
 #### Resta con llevo *SBC*
