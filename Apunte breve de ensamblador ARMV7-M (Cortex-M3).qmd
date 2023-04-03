@@ -572,12 +572,15 @@ Nota 2: El listado de registros **va escrito entre llaves en el código**, los r
 
 Debido a la existencia de una doble nomenclatura y valores por defecto para el *modo* resulta conveniente hacer una tabla detallando todas las opciones para una mayor clarirad.
 
-|Instrucciónes           |Acción    |Posiciones de memoria   |Valor final de Rn si se usa !|
-|------------------------|----------|------------------------|-----------------------------|
-|*LDM*, *LDMIA* o *LDMFD*|Carga     | $Rn,\dots,Rn+4(N-1)$   | $Rn\leftarrow Rn + 4N$      |
-|*LDMDB*,*LDMEA*         |Carga     | $Rn-4N,\dots,Rn-4$     | $Rn\leftarrow Rn - 4N$      |
-|*STM*, *STMIA* o *STMEA*|Almacenaje| $Rn,\dots,Rn+4(N-1)$   | $Rn\leftarrow Rn + 4N$      |
-|*STMDB*,*STMFD*         |Almacenaje| $Rn-4N,\dots,Rn-4$     | $Rn\leftarrow Rn - 4N$      |
+|Instrucciónes      |Acción|Posiciones de memoria   |Actualización con !|
+|-------------------|------|------------------------|-----------------------------|
+|LDM, LDMIA o LDMFD |Carga | $Rn,\dots,Rn+4(N-1)$   | $Rn\leftarrow Rn + 4N$      |
+| |
+|LDMDB o LDMEA      |Carga | $Rn-4N,\dots,Rn-4$     | $Rn\leftarrow Rn - 4N$      |
+| |
+|STM, STMIA o STMEA |Guarda| $Rn,\dots,Rn+4(N-1)$   | $Rn\leftarrow Rn + 4N$      |
+| |
+|STMDB, STMFD       |Guarda| $Rn-4N,\dots,Rn-4$     | $Rn\leftarrow Rn - 4N$      |
 
 Significado de los sufijos:
 
