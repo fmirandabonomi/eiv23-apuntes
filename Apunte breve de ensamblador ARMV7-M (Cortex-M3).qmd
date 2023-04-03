@@ -78,9 +78,10 @@ Ejemplo:
 Nota: C es la bandera de acarreo.
 
 ```asm
-Ejemplo_de_uso:         // R1:R0 ← R1:R0 + R3:R2
-    ADDS R0,R2          // R0,banderas ← R0 + R2
-    ADC R1,R3           // R1 ← R1 + R3 + C
+ej_suma_64:             // R1:R0 ← R1:R0 + R3:R2
+    adds r0,r2          // R0,banderas ← R0 + R2
+    adc r1,r3           // R1 ← R1 + R2 + C
+    bx lr
 ```
 
 #### Resta con llevo *SBC*
@@ -88,9 +89,10 @@ Ejemplo_de_uso:         // R1:R0 ← R1:R0 + R3:R2
 Nota: C es la bandera de acarreo, luego de una resta vale 0 si ocurrió un pido (borrow).
 
 ```asm
-Ejemplo_de_uso:     // R3:R2 ← R5:R4 - R1:R0
-    SUBS R2,R4,R0   // R2,banderas ← R4 - R0
-    SBC  R3,R5,R1   // R3 ← R5 - R1 - 1 + C
+ej_resta_64:            // R1:R0 ← R1:R0 - R3:R2
+    subs r0,r2          // R0,banderas ← R0 - R2
+    sbc r1,r3           // R1 ← R1 - R3 - 1 + C
+    bx lr
 ```
 
 #### Comparación *CMP*
@@ -120,7 +122,8 @@ Para mayor información referirse a [AND, ORR, EOR, BIC, and ORN][gug_logi] en l
 
 ```asm
 Ejemplos:
-    AND R3,#0x04000000  // R3 ← R3 and 0x04000000 // pone en 0 todos los bits de R3 excepto el bit 26
+    AND R3,#0x04000000  // R3 ← R3 and 0x04000000 
+                        // pone en 0 todos los bits de R3 excepto el bit 26
     ANDS R0,R1,R3,lsl#8 // R0,banderas ← R1 and (R3 lsl 8)
     AND R2,R1           // R2 ← R2 and R1
 ```
@@ -129,7 +132,8 @@ Ejemplos:
 
 ```asm
 Ejemplo:
-    ORR R3,#0x00001000  // R3 ← R3 or 0x00001000 // pone en uno el bit 12 de R3
+    ORR R3,#0x00001000  // R3 ← R3 or 0x00001000
+                        // pone en uno el bit 12 de R3
     ORR R2,R4           // R2 ← R2 or R4
 ```
 
@@ -137,7 +141,8 @@ Ejemplo:
 
 ```asm
 Ejemplo:
-    EOR R1,#0xFF00FF00  // R1 ← R1 xor 0xFF00FF00 // invierte los bits 8 a 15 y 24 a 31 de R1
+    EOR R1,#0xFF00FF00  // R1 ← R1 xor 0xFF00FF00
+                        // invierte los bits 8 a 15 y 24 a 31 de R1
     EOR R0,R3           // R0 ← R0 xor R3
 ```
 
@@ -145,7 +150,8 @@ Ejemplo:
 
 ```asm
 Ejemplo:
-    BIC R0,#0x08000000  // R0 ← R0 and (not 0x08000000) // pone en cero el bit 27 de R0
+    BIC R0,#0x08000000  // R0 ← R0 and (not 0x08000000)
+                        // pone en cero el bit 27 de R0
     BIC R2,R4           // R2 ← R2 and (not R4)
 ```
 
@@ -153,7 +159,9 @@ Ejemplo:
 
 ```asm
 Ejemplo:
-    ORN R1,#0x00FF0000  // R1 ← R1 or (not 0x00FF0000) // pone en uno todos los bits de R1 excepto los bits 16 a 23
+    ORN R1,#0x00FF0000  // R1 ← R1 or (not 0x00FF0000)
+                        // pone en uno todos los bits de R1 
+                        // excepto los bits 16 a 23
     ORN R2,R4           // R2 ← R2 or (not R4)
 ```
 
@@ -163,7 +171,9 @@ Nota: es una operación Y bit a bit donde se descarta el resultado y se afectan 
 
 ```asm
 Ejemplo:
-    TST R2,#0x01000000  // banderas ← R2 and 0x01000000 // Z=0 si el bit 24 de R2 es '1', de lo contrario Z=1
+    TST R2,#0x01000000  // banderas ← R2 and 0x01000000
+                        // Z=0 si el bit 24 de R2 es '1',
+                        // de lo contrario Z=1
     TST R1,R3           // banderas ← R1 and R3
 ```
 
@@ -173,8 +183,11 @@ Nota: es una operación O exclusivo bit a bit donde se descarta el resultado y s
 
 ```asm
 Ejemplo:
-    TEQ R2,#0xFF00FF00  // banderas ← R2 xor 0xFF00FF00    // Z=0 si R2 es igual a 0xFF00FF00
-    TEQ R3,#0x10000000  // banderas ← R3 xor 0             // N=0 si R2 es negativo, Z=0 si R2 es el mínimo del compl. a 2
+    TEQ R2,#0xFF00FF00  // banderas ← R2 xor 0xFF00FF00
+                        // Z=0 si R2 es igual a 0xFF00FF00
+    TEQ R3,#0x10000000  // banderas ← R3 xor 0
+                        // N=0 si R2 es negativo, Z=0 si R2
+                        // es el mínimo del complemento a 2
     TEQ R4,R5           // banderas ← R4 xor R5
 ```
 
@@ -208,7 +221,8 @@ Ejemplos:
 
 ```asm
 Ejemplos:
-    MVN R1,0x000FF000   // R1 ← (not 0x000FF000) // R1 valdrá luego 0xFFF00FFF
+    MVN R1,0x000FF000   // R1 ← (not 0x000FF000)
+                        // R1 valdrá luego 0xFFF00FFF
     MVN R3,R5           // R3 ← (not R5)
     MVN R2,R3,asr#5     // R2 ← (not R3) asr 5
 ```
@@ -234,7 +248,8 @@ Nota: Usar siempre *MOVT* luego de *MOV* puesto que *MOV* sobreescribe los bits 
 ```asm
 Ejemplo_de_uso:
     MOV R0,0x5678       // R0 ← 0x5678
-    MOVT R0,0x1234      // R0(31..16) ← 0x1234 // Luego de estas dos instrucciones R0 vale 0x12345678
+    MOVT R0,0x1234      // R0(31..16) ← 0x1234
+                        // Luego de estas dos instrucciones R0 vale 0x12345678
 ```
 
 ### Modos de desplazamiento {#sec-mdesp}
@@ -289,7 +304,8 @@ Rotación extendida un bit a la derecha *RRX*. Desplaza los bits del registro un
 Ejemplo:
     MOV R0,#1
     MOVT R0,#0x8000     // luego R0 ← 0x80000001
-    cmn R0,#0           // banderas ← R0 + 0 // Luego C=0
+    cmn R0,#0           // banderas ← R0 + 0
+                        // Luego C=0
     RRX R1,R0           // Luego C=1, R1=0x40000000
     RRX R1,R1           // Luego C=0, R1=0xA0000000
 ```
@@ -311,7 +327,7 @@ La instrucción *B* permite hacer un salto con un desplazamiento constante que e
 Donde *cond* es una condición opcional (las llaves no se escriben, solo indican que cond es opcional).
 
 ```asm
-Ejemplo: // Lazo con 130 repeticiones
+Ejemplo:            // Lazo con 130 repeticiones
     MOV R0,#130
 0:                  // esta es una etiqueta local especial
     SUBS R0,#1      // R0, banderas ← R0 - 1
