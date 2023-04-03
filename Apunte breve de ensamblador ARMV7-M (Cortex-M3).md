@@ -3,6 +3,7 @@ author: Ferando Alberto Miranda Bonomi
 title: Apunte breve de ensamblador ARMV7-M (Cortex-M3).
 date: last-modified
 date-format: iso
+number-sections: true
 ---
 En este apunte breve se indican algunas instrucciones comunes del conjunto de instrucciones soportado por la familia de procesadores armv7-m a la que pertenece el Cortex-M3.
 
@@ -12,7 +13,7 @@ Las operaciones entre registros se indican de la siguiente manera:
 
 *op{s}* *Rd, Rn, Rm{, desplazamiento #n}*
 
-Donde las partes encerradas en llaves son opcionales, la terminación *s* indica que la operación debe afectar las banderas. El desplazamiento permite desplazar los bits del registro *Rm* a izquierda o derecha. Para más detalles consulta la sección desplazamiento.
+Donde las partes encerradas en llaves son opcionales (las llaves *no son parte del código*), la terminación *s* indica que la operación debe afectar las banderas. El desplazamiento permite desplazar los bits del registro *Rm* a izquierda o derecha. Para más detalles consulta la [sección @sec-mdesp].
 
 Si *Rd* es el mismo registro que *Rm* y no se usa desplazamiento puede escribirse la forma reducida
 
@@ -31,15 +32,13 @@ donde la constante es, dados dos dígitos hexadecimales X e Y, cualquier constru
 
 Para mayor información ver [flexible second operand][gug_fso]
 
-### Operaciones (*op*)
-
-#### Operaciónes aritméticas
+### Operaciónes aritméticas
 
 Todas las operaciones de suma y resta afectan las banderas Z,C,N,V si se usa la terminación *s*.
 
 Para mayor información referirse a [ADD, ADC, SUB, SBC, and RSB][gug_arit] en la guía de usuario genérica de Cortex-M3.
 
-##### Suma: *ADD*
+#### Suma: *ADD*
 
 ```asm
 Ejemplos:
@@ -49,7 +48,7 @@ Ejemplos:
     ADD R2,R2,R3,lsl #4 // R2 ← R2 + (R3 lsl 4). No tiene versión corta
 ```
 
-##### Resta *SUB*
+#### Resta *SUB*
 
 ```asm
 Ejemplos:
@@ -58,7 +57,7 @@ Ejemplos:
     SUBS R1,R2,R3,asr#3 // R1,banderas ← R2 - (R3 asr 3)
 ```
 
-##### Suma y resta con constante de 12 bit
+#### Suma y resta con constante de 12 bit
 
 Las operaciónes *ADD* y *SUB* cuentan además con una forma de registro + constante donde la constante es de un número de 12 bits
 
@@ -74,7 +73,7 @@ Ejemplo:
     SUB R1,R3,#3000     // R1 ← R3 - 3000 // Forma SUB Rd{,Rn},#imm12
 ```
 
-##### Suma con acarreo: *ADC*
+#### Suma con acarreo: *ADC*
 
 Nota: C es la bandera de acarreo.
 
@@ -84,7 +83,7 @@ Ejemplo_de_uso:         // R1:R0 ← R1:R0 + R3:R2
     ADC R1,R2           // R1 ← R1 + R2 + C
 ```
 
-##### Resta con llevo *SBC*
+#### Resta con llevo *SBC*
 
 Nota: C es la bandera de acarreo, luego de una resta vale 0 si ocurrió un pido (borrow).
 
@@ -94,7 +93,7 @@ Ejemplo_de_uso:     // R3:R2 ← R5:R4 - R1:R0
     SBC  R3,R5,R1   // R3 ← R5 - R1 - 1 + C
 ```
 
-##### Comparación *CMP*
+#### Comparación *CMP*
 
 Nota: resta donde el resultado es descartado y solo se afectan las banderas. Para mayor información referirse a [CMP and CMN][gug_cmp] en la guía de usuario genérica de Cortex-M3.
 
@@ -111,13 +110,13 @@ Ejemplo:
     CMN R4,R2       // banderas ← R4 + R2
 ```
 
-#### Operaciones lógicas
+### Operaciones lógicas
 
 Las operaciones lógicas, si se usa la terminación *s*, afectan las banderas Z,N,C. En el caso de C será afectada si se usa un desplazamiento opcional en el operando Rm, el último bit desplazado fuera del valor se guardará en el carry.
 
 Para mayor información referirse a [AND, ORR, EOR, BIC, and ORN][gug_logi] en la guía de usuario genérica de Cortex-M3.
 
-##### Conjunción ('Y' lógico) bit a bit *AND*
+#### Conjunción ('Y' lógico) bit a bit *AND*
 
 ```asm
 Ejemplos:
@@ -126,7 +125,7 @@ Ejemplos:
     AND R2,R1           // R2 ← R2 and R1
 ```
 
-##### Disyunción ('O' lógico) bit a bit *ORR*
+#### Disyunción ('O' lógico) bit a bit *ORR*
 
 ```asm
 Ejemplo:
@@ -134,7 +133,7 @@ Ejemplo:
     ORR R2,R4           // R2 ← R2 or R4
 ```
 
-##### Discrepancia ('O' exclusivo) bit a bit *EOR*
+#### Discrepancia ('O' exclusivo) bit a bit *EOR*
 
 ```asm
 Ejemplo:
@@ -142,7 +141,7 @@ Ejemplo:
     EOR R0,R3           // R0 ← R0 xor R3
 ```
 
-##### Y bit a bit con segundo argumento negado *BIC* (BIt Clear, por ser usado para borrar setear bits a 0)
+#### Y bit a bit con segundo argumento negado *BIC* (BIt Clear, por ser usado para borrar setear bits a 0)
 
 ```asm
 Ejemplo:
@@ -150,7 +149,7 @@ Ejemplo:
     BIC R2,R4           // R2 ← R2 and (not R4)
 ```
 
-##### O bit a bit con el segundo operando negado *ORN*
+#### O bit a bit con el segundo operando negado *ORN*
 
 ```asm
 Ejemplo:
@@ -158,7 +157,7 @@ Ejemplo:
     ORN R2,R4           // R2 ← R2 or (not R4)
 ```
 
-##### Prueba de bits *TST*
+#### Prueba de bits *TST*
 
 Nota: es una operación Y bit a bit donde se descarta el resultado y se afectan las banderas. Para mayor información referirse a [TST and TEQ][gug_tst] en la guía de usuario generica de Cortex-M3.
 
@@ -168,7 +167,7 @@ Ejemplo:
     TST R1,R3           // banderas ← R1 and R3
 ```
 
-##### Prueba de igualdad *TEQ*
+#### Prueba de igualdad *TEQ*
 
 Nota: es una operación O exclusivo bit a bit donde se descarta el resultado y se afectan las banderas. A diferencia de *CMP*, esta comparación no afecta la bandera de desborde V, y si no se usa desplazamiento tampoco la bandera de acarreo.
 
@@ -179,7 +178,7 @@ Ejemplo:
     TEQ R4,R5           // banderas ← R4 xor R5
 ```
 
-#### Operaciones de copia y desplazamiento
+### Operaciones de copia y desplazamiento
 
 Copian un registro sobre otro, aplicando posiblemente un desplazamiento. Si se usa la terminación *s* afectan las banderas N,Z y C (esta última solo si se usó desplazamiento).
 
@@ -205,7 +204,7 @@ Ejemplos:
     ROR R1,R2,R3        // R1 ← R2 ror R3
 ```
 
-##### Copiar la negación bit a bit de un registro en otro *MVN*
+#### Copiar la negación bit a bit de un registro en otro *MVN*
 
 ```asm
 Ejemplos:
@@ -214,7 +213,7 @@ Ejemplos:
     MVN R2,R3,asr#5     // R2 ← (not R3) asr 5
 ```
 
-##### Inicializar un registro con un valor constante *MOV* y *MOVT*
+#### Inicializar un registro con un valor constante *MOV* y *MOVT*
 
 La instrucción *MOV* tiene una variante que acepta una constante de 16 bit.
 
@@ -238,7 +237,7 @@ Ejemplo_de_uso:
     MOVT R0,0x1234      // R0(31..16) ← 0x1234 // Luego de estas dos instrucciones R0 vale 0x12345678
 ```
 
-#### Más sobre los desplazamientos
+### Modos de desplazamiento {#sec-mdesp}
 
 Aquí se indica el efecto que tienen los distintos modos de desplazamiento.
 
