@@ -7,6 +7,14 @@ number-sections: true
 ---
 En este apunte breve se indican algunas instrucciones comunes del conjunto de instrucciones soportado por la familia de procesadores armv7-m a la que pertenece el Cortex-M3.
 
+Referencias Importantes:
+
+[Guía de usuario genérica de los dispositivos Cortex-M3 (en línea, inglés)][gug]. Es una referencia breve de la familia de procesadores Cortex-M3. Incluye descripciones de las instrucciones. Explica también el uso de periféricos propios del procesador Cortex-M3.
+
+[Manual de referencia de la arquitectura ARMV7-M (pdf, inglés)][armv7m_rm]. Manual de referencia que incluye una explicación detallada de la arquitectura ARMV7-M, que implementan los procesadores Cortex-M3. Aquí pueden encontrar explicaciones detalladas de las instrucciones con pseudocódigo. Incluye además la codificación en código máquina de las instrucciones de ensamblador. Nota: No todas las características expuestas son implementadas por los procesadores Cortex-M3. La unidad de punto flotante no es implementada en Cortex-M3, si en Cortex-M4 que tiene la misma arquitectura.
+
+[Manual del programador de STM32F10xxx/20xxx/21xxx/L1xxx (pdf,inglés)][stm_cm3prf]. Es una referencia de ST Microelectronics para sus líneas de productos que incluyen procesadores Cortex-M3. Puede considerarse una reedición de la guía de usuario genérica particularizada para los productos de ST.
+
 ## Operaciones entre registros; operaciones entre registros y constantes
 
 Las operaciones entre registros se indican de la siguiente manera:
@@ -76,6 +84,8 @@ Ejemplo:
 #### Suma con acarreo: *ADC*
 
 Nota: C es la bandera de acarreo.
+
+Notación: Si un número de 64 bits está almacenado en dos registros de modo que su *parte alta* está en R1 y su parte baja en R2 esto se escribe a continuación como `R1:R2`.
 
 ```asm
 ej_suma_64:             // R1:R0 ← R1:R0 + R3:R2
@@ -701,6 +711,8 @@ ejemplo:
     pop {R4,PC}         // Recupera R4 y retorna
 ```
 
+[gug]: https://developer.arm.com/documentation/dui0552/a?lang=en
+[stm_cm3prf]: https://www.st.com/resource/en/programming_manual/cd00228163-stm32f10xxx20xxx21xxxl1xxxx-cortexm3-programming-manual-stmicroelectronics.pdf
 [gug_it]: https://developer.arm.com/documentation/dui0552/a/the-cortex-m3-instruction-set/branch-and-control-instructions/it?lang=en
 [gug_b]: https://developer.arm.com/documentation/dui0552/a/the-cortex-m3-instruction-set/branch-and-control-instructions/b--bl--bx--and-blx?lang=en
 [gug_lsimm]: https://developer.arm.com/documentation/dui0552/a/the-cortex-m3-instruction-set/memory-access-instructions/ldr-and-str--immediate-offset?lang=en
