@@ -7,31 +7,15 @@
     bibliography: bibliografia.bib
 ---
 
-## Arquitectura de computadora
+## Arquitectura de computadora y microarquitectura u organización de la computadora
 
-Una arquitectura de computadora es la manera en que distintos componentes de una computadora son organizados e integrados. La arquitectura es establecida en varios niveles de abstracción.
+La arquitectura de computadora define la organización lógica y el comportamiento de una computadora. Esto incluye la organización de memoria, registros y conjunto de instrucciones. Suele usarse como sinónimo el término *arquitectura del conjunto de instrucciones* (Instruction Set Architecture, ISA) de la computadora. La arquitectura de computadora define los registros, las operaciones, su codificación, efectos y modos de acceso a memoria y periféricos [@stallings19].
 
-La *arquitectura de conjunto de instrucciones (ISA)* **determina las operaciones que son posibles en la máquina, su codificación y secuencia lógica de ejecución**, especifica las unidades lógicas de almacenamiento y el flujo lógico de datos
+La organización de la computadora o microarquitectura determina la forma en que se implementa la arquitectura de computadora en hardware. Define componentes, conexionado, interfaces y todo otro detalle necesario para la implementación de las características especificadas por la arquitectura [@stallings19].
 
-La *microarquitectura* **determina la implementación de la ISA a nivel de bloques lógicos**, está compuesta de registros, conexiones y bloques combinacionales.
-
-La *arquitectura de hardware* **determina la implementación a nivel transistor de la microarquitectura**.
-
-Tradicionalmente la ISA se denomina *arquitectura* y la microarquitectura junto con la arquitectura de hardware se denominan *implmementación*
+Una misma arquitectura es usualmente implementada por distintas microarquitecturas con diversas características y rendimiento. Por ejemplo, las microarquitecturas de los procesadores Intel Atom e Intel Core i9 implementan la misma arquitectura x86-64. Ambos pueden ejecutar el mismo código y desde el punto de vista del programador pueden ser tratados hasta cierto punto de manera uniforme, pero sus características y rendimiento son muy diferentes.
 
 ## Términos comunes
-
-### Registro *Registro* de un procesador
-
-Un registro es una unidad lógica de memoria que puede almacenar un valor numérico. El procesador tiene un conjunto de registros (register file), definido en su ISA. Los operandos de las instrucciones del procesador son tomados de los registros y las instrucciones que producen valores suelen almacenarlos en los registros.
-
-### *RISC*: Reduced Instruction Set Computer, Computadora de conjunto de instrucciones reducido
-
-El término *RISC* describe un diseño de computadora a nivel ISA donde cada instrucción efectúa una sola clase de operación, sea procesamiento de datos, acceso a memoria o modificación del flujo de ejecución. Suele estar asociado al concepto de arquitectura de carga-almacenamiento (load-store), porque para poder hacer una operación aritmética o lógica con datos es necesario primero cargarlos de memoria a los registros del procesador (load), almacenando luego el resultado en memoria (store) para poder usar los registros en otra tarea. También puede hablarse en el mismo tenor de arquitectura registro-registro (register-register) porque las operaciones aritméticas y lógicas se realizan con operandos almacenados en registros y sus resultados se guardan en registros del microprocesador. 
-
-### *CISC*: Complex Instruction Set Computer, Computadora de conjunto de instrucciones complejo
-
-En el momento que se acuñó el término *RISC*, se empleó el término *CISC* para referirse a toda arquitectura que incluya instrucciones que realizan más de una clase de operación, que era la tendencia del momento. Por ejemplo, la instrucción de suma de una computadora CISC puede sumar un número en un registro con un número cargado desde memoria y almacenar el resultado en memoria, este mismo proceso reuqiere tres instrucciones (carga, suma, almacenamiento) y usa al menos un registro extra en una máquina RISC.
 
 ### Bus (en una computadora)
 
@@ -40,3 +24,48 @@ El término *bus* (del latín *omnibus*, para todo) se refiere a una conexión e
 El maestro establece las líneas de dirección y las líneas de control que solicitan el uso del bus. El árbitro decide que maestro tiene uso del bus cuando hay más de una solicitud. En la @fig-bus-bindal19, tomada de [@bindal19], se muestra un bus unidireccional paralelo.
 
 ![Estructura de bus unidireccional](bus-unidir-bindal19.png){#fig-bus-bindal19}
+
+El bus configura un *espacio de direcciones*, y cada componente conectado implementa un *rango de direcciones* dentro de dicho espacio. Por ejemplo, en el procesador STM32F103C8 el espacio de dirección es de 32 bits, la memoria de programa está ubicada en el rango `0x08000000` a `0x0800FFFF` (está además conectada al bus de instrucciones separado, lo que permite ejecutar dos accesos simultáneos a esta memoria), la memoria de datos en el rango `0x20000000` a `0x20004FFF`, el bus periférico (conectado al principal mediante un componente "puente") entre `0x40000000` y `0x400233FF`, etc. Los periféricos propios de la microarquitectura Cortex-M3 (SysTick, NVIC, etc.) están ubicados en el rango `0xE0000000` a `0xE00FFFFF`.
+
+Los buses internos de un procesador son normalmente paralelos y unidireccionales (tal es el caso del bus AHB de los Cortex-M3) por razones de rendimiento. Los buses donde se conectan los periféricos son de menor rendimiento y pueden ser bidireccionales (como es el caso del APB de los Cortex-M3). Los periféricos externos a un microcontrolador suelen conectarse mediante buses seriales, que pueden ser unidireccionales (como el bus SPI) o bidireccionales (como el bus I2C).
+
+### Registros
+
+Un registro es una de memoria interna al procesador capaz de almacenar un valor numérico. Dependiendo de la arquitectura del procesador puede haber uno o más registros, de propósito general o con funciones especiales. En el caso de las máquinas *RISC* usualmente hay varios registros de propósito general, a fin de facilitar el diseño de compiladores eficientes para lenguajes de alto nivel [@hennessy_patterson].
+
+### Memoria principal
+
+La memoria principal de la computadora es una memoria de datos de gran capacidad. En ella se mantiene la información con la que trabaja el programa. El procesador no puede operar directamente con los datos almacenados sino que debe cargarlos en espacios de memoria internos, registros, para poder realizar las operaciones y luego almacenar, de ser necesario, los resultados en la memoria principal. En el caso de máquinas *RISC* las operaciones de carga y almacenmiento son separadas de las operaciónes de procesamiento de datos. En computadoras *CISC* las instrucciones de procesamiento de datos efectúan también carga y almacenamiento en forma transparente al programador,usando registros internos para mantener los valores durante la etapa de procesamiento.
+
+### Memoria de programa
+
+Es la memoria que contiene el programa a ejecutar. En una máquina de microarquitectura Von Newmann la memoria de programa es parte de la memoria principal. En una máquina de microarquitectura Hardvard la memoria de programa está conectada a un bus diferente al de la memoria principal. En el caso de los procesadores ARM Cortex-M3 la memoria de programa está conectada tanto a un bus de instrucciones, usado por el procesador para cargar las instrucciones a ejecutar, como a un bus de datos, que comparte con la memoria principal y los periféricos. Es por ello que la memoria de programa puede ser accedida de la misma manera que la memoria de datos. En los microcontroladores la memoria de programa es normalmente una memoria no volátil (mantiene la información sin necesidad de alimentación), usualmente de tipo Flash.
+
+La microarquitectura de los procesadores Cortex-M3 no es puramente Harvard sino Harvard Modificada, permitiendo mantener instrucciones en el espacio de memoria de datos, aunque el rendimiento del procesador es en ese caso menor por contar con un solo bus para instrucciones y datos.
+
+### Periféricos
+
+Los periféricos son componentes conectados a la computadora que permiten efecutar operaciones de entrada/salida. Son el mecanismo que acopla la computadora a su entorno. Normalmente son conectados al procesador por un bus de menor rendimiento que el de la memoria principal. Un componente conocido como puente (bridge) conecta el bus de alta velocidad del procesador al bus de baja velocidad de los periféricos. Los periféricos se comunican con el microporcesador a través de registros de los mismos, que son accedidos como si se tratase de memoria de datos. En el caso de los procesadores x86, por razones históricas, parte de los registros de los periféricos están en un espacio de direcciones separado que es accedido mediante instrucciones especiales. Los procesadores modernos suelen mantener un espacio de direcciónes único para memoria de datos y periféricos. La distinción entre memoria y periféricos se hace en base a su posición en el espacio de direcciones. Ese es el caso de los procesadores Cortex-M3.
+
+### *RISC*: Reduced Instruction Set Computer, Computadora de conjunto de instrucciones reducido
+
+El término *RISC* describe una *arquitectura de computadora* donde cada instrucción efectúa una sola clase de operación, sea procesamiento de datos, acceso a memoria, modificación del flujo de ejecución, control del sistema, etc. En esta arquitectura notablemente las operaciones de acceso a memoria son separadas de las operaciones de procesamiento de datos, esta característica se suele describir como arquitectura de carga-almacenamiento, por la necesidad de cargar de memoria los operandos y almacenar el resultado como pasos individuales, o arquitectura registro-registro porque las operaciones de procesamiento de datos toman sus operandos de registros y escriben su resultado en registros. Ver [@null_lobur] y [@hennessy_patterson].
+
+### *CISC*: Complex Instruction Set Computer, Computadora de conjunto de instrucciones complejo
+
+En el momento que se acuñó el término *RISC*, se empleó el término *CISC* para referirse a toda arquitectura que incluya instrucciones que realizan más de una clase de operación, que era la tendencia del momento. Por ejemplo, la instrucción de suma de una computadora CISC puede sumar un número en un registro con un número cargado desde memoria y almacenar el resultado en memoria, este mismo proceso reuqiere tres instrucciones (carga, suma, almacenamiento) y usa al menos un registro extra en una máquina RISC. Ver [@null_lobur] y [@hennessy_patterson].
+
+### Máquina de Von Newmann
+
+La máquina de Von Newmann o computadora de programa almacenado es un modelo teórico de computadora donde el programa es almacenado en el mismo espacio de memoria que los datos. Se suele llamar arquitectura Von Newmann a una microarquitectura donde existe un único bus que comunica al procesador con la memoria de programa y la memoria de datos (y el programa está en muchos casos en la misma memoria física que los datos). La mayor parte de las computadoras modernas son lógicamente máquinas de Von Newmann, tratando en forma unificada la memoria de datos y de programa. Las microarquitecturas modernas, por otro lado, cuentan generalmente con dos buses separados para datos e instrucciones. Esto permite de manera simultánea leer la siguiente instrucción del programa y acceder a la memoria de datos. [@null_lobur]
+
+### Máquina de Harvard
+
+La máquina de Harvard es un modelo teórico de computadora donde el programa se encuentra almacenado en una memoria independiente de la memoria de datos. La memoria de programa está conectada al procesador por un bus independiente y no puede ser accedida de la misma forma que la memoria de datos, ni pueden ejecutarse programas almacenados en la memoria de datos.
+
+Si bien es raro encontrar una máquina moderna que responda al modelo de Harvard estricto, la mayor parte de las máquinas modernas cuentan con buses separados de datos e instrucciones para poder cargar instrucciones y acceder a la memoria de datos en forma simultánea. En este caso la memoria de programa es accesible también desde el bus de datos. Estas microarquitecturas suelen denominarse Arquitecturas de Harvard Modificadas. [@null_lobur]
+
+## Referencias
+
+:::{#refs}
+:::
