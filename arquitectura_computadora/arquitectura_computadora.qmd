@@ -1,0 +1,42 @@
+---
+    author: Ferando Alberto Miranda Bonomi
+    title: Apunte breve de arquitectura de computadora
+    date: last-modified
+    date-format: iso
+    number-sections: true
+    bibliography: bibliografia.bib
+---
+
+## Arquitectura de computadora
+
+Una arquitectura de computadora es la manera en que distintos componentes de una computadora son organizados e integrados. La arquitectura es establecida en varios niveles de abstracción.
+
+La *arquitectura de conjunto de instrucciones (ISA)* **determina las operaciones que son posibles en la máquina, su codificación y secuencia lógica de ejecución**, especifica las unidades lógicas de almacenamiento y el flujo lógico de datos
+
+La *microarquitectura* **determina la implementación de la ISA a nivel de bloques lógicos**, está compuesta de registros, conexiones y bloques combinacionales.
+
+La *arquitectura de hardware* **determina la implementación a nivel transistor de la microarquitectura**.
+
+Tradicionalmente la ISA se denomina *arquitectura* y la microarquitectura junto con la arquitectura de hardware se denominan *implmementación*
+
+## Términos comunes
+
+### Registro *Registro* de un procesador
+
+Un registro es una unidad lógica de memoria que puede almacenar un valor numérico. El procesador tiene un conjunto de registros (register file), definido en su ISA. Los operandos de las instrucciones del procesador son tomados de los registros y las instrucciones que producen valores suelen almacenarlos en los registros.
+
+### *RISC*: Reduced Instruction Set Computer, Computadora de conjunto de instrucciones reducido
+
+El término *RISC* describe un diseño de computadora a nivel ISA donde cada instrucción efectúa una sola clase de operación, sea procesamiento de datos, acceso a memoria o modificación del flujo de ejecución. Suele estar asociado al concepto de arquitectura de carga-almacenamiento (load-store), porque para poder hacer una operación aritmética o lógica con datos es necesario primero cargarlos de memoria a los registros del procesador (load), almacenando luego el resultado en memoria (store) para poder usar los registros en otra tarea. También puede hablarse en el mismo tenor de arquitectura registro-registro (register-register) porque las operaciones aritméticas y lógicas se realizan con operandos almacenados en registros y sus resultados se guardan en registros del microprocesador. 
+
+### *CISC*: Complex Instruction Set Computer, Computadora de conjunto de instrucciones complejo
+
+En el momento que se acuñó el término *RISC*, se empleó el término *CISC* para referirse a toda arquitectura que incluya instrucciones que realizan más de una clase de operación, que era la tendencia del momento. Por ejemplo, la instrucción de suma de una computadora CISC puede sumar un número en un registro con un número cargado desde memoria y almacenar el resultado en memoria, este mismo proceso reuqiere tres instrucciones (carga, suma, almacenamiento) y usa al menos un registro extra en una máquina RISC.
+
+### Bus (en una computadora)
+
+El término *bus* (del latín *omnibus*, para todo) se refiere a una conexión entre dos o más componentes en un sistema de cómputo. Es implementado por conjuntos de conductores paralelos o *líneas* que transportan información de *dirección*, *control* y *datos*, operando en forma sincrónica con un *reloj*. Los componentes conectados a un bus tienen un orden jerárquico con roles de *maestro* y *esclavo*. Hay uno o más maestros y uno o más esclavos. En cada momento dado solo un maestro puede estar activo o tener control del bus. El proceso de decisión que permite a un maestro tomar control del bus se denomina arbitraje, producido por un componente denominado árbitro. Cada esclavo en el bus tiene una dirección asociada que lo selecciona como el esclavo activo, esta dirección está compuesta por parte de las líneas de dirección. El bus incluye un componente denominado decodificador que genera la señal de habilitación para el esclavo seleccionado. El resto de las líneas de dirección permiten seleccionar una dirección interna al esclavo. Si el esclavo es una memoria entonces la dirección selecciona el elemento de memoria a leer o escribir. Si el esclavo es un periférico la dirección selecciona un registro interno a leer o escribir. Los datos son transferidos mediante las líneas de datos. Si el bus es *bidireccional* las líneas de datos se comparten en las operaciones de lectura y escritura, usando lógica de tres estados. Si el bus es *unidireccional* entonces hay líneas de datos dedicadas para lectura y escritura. Un bus es *paralelo* si los bits de datos que componen una palabra se transmiten simultáneamente en líneas paralelas. Un bus es *serial* si la transmisión es de un bit por vez.
+
+El maestro establece las líneas de dirección y las líneas de control que solicitan el uso del bus. El árbitro decide que maestro tiene uso del bus cuando hay más de una solicitud. En la @fig-bus-bindal19, tomada de [@bindal19], se muestra un bus unidireccional paralelo.
+
+![Estructura de bus unidireccional](bus-unidir-bindal19.png){#fig-bus-bindal19}
