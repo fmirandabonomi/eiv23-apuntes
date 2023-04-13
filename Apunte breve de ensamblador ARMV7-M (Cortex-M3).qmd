@@ -90,7 +90,7 @@ Notación: Si un número de 64 bits está almacenado en dos registros de modo qu
 ```asm
 ej_suma_64:             // R1:R0 ← R1:R0 + R3:R2
     adds r0,r2          // R0,banderas ← R0 + R2
-    adc r1,r3           // R1 ← R1 + R2 + C
+    adc r1,r3           // R1 ← R1 + R3 + C
     bx lr
 ```
 
@@ -440,6 +440,20 @@ max3:
                     // el máximo queda en R0, listo para retornar.
     pop {R4,PC}     // Recupera R4 y carga el valor guardado de LR en
                     // el contador de programa (PC).
+
+main:
+    mov R0,#120     // R0 ← 120
+    mov R1,#50      // R1 ← 50
+    mov R3,#230     // R2 ← 230
+    bl max3         // Llama a subrutina max3, copiando en el registro LR
+                    // la dirección de la instrucción siguiente (mov R1,R0)
+    mov R1,R0       // Al retornar de max3, R0 contiene el máximo
+    ldr R0,=mensaje
+    bl printf       // Muestra mensaje
+    b .             // Lazo infinito
+
+.pool
+mensaje: .asciz "El máximo es %d\n"
 ```
 
 ## Operaciones de acceso a memoria
