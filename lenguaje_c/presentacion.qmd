@@ -1,0 +1,269 @@
+---
+    author: "Ferando Alberto Miranda Bonomi"
+    title: "Lenguaje C"
+    date: last-modified
+    date-format: iso
+    format: revealjs
+    bibliography: bibliografia.bib
+---
+
+## Lenguaje de programación
+
+Es un lenguaje formal que permite codificar procesos de cómputo o algoritmos de manera que puedan ser ejecutados por una computadora.
+
+## Ejemplo
+
+Sumar un arreglo de enteros con signo de 32 bit usando aritmética con signo de 64 bit.
+
+## En lenguaje C
+
+```{.C code-line-numbers="1-10|3-4,9-10|5|6,8|7"}
+#include <stdint.h>
+
+int64_t sumatoria(int32_t N,const int32_t *b )
+{
+    int64_t A=0;
+    for (int i=0;i<N;++i){
+        A += b[i];
+    }
+    return A;
+}
+```
+
+## En código ensamblador ARMv7-M
+
+```{.asm code-line-numbers="1-18|1,14,18|6-7,16-17|2-5,8-9,12-13|9-11"}
+sumatoria:
+    cmp     r0, #0
+    ble     .L4
+    subs    r2, r1, #4
+    add     ip, r2, r0, lsl #2
+    movs    r0, #0
+    mov     r1, r0
+.L3:
+    ldr     r3, [r2, #4]!
+    adds    r0, r3, r0
+    adc     r1, r1, r3, asr #31
+    cmp     r2, ip
+    bne     .L3
+    bx      lr
+.L4:
+    movs    r0, #0
+    mov     r1, r0
+    bx      lr
+```
+
+## En código máquina ARMv7-M (comentado)
+
+```{.asm code-line-numbers="1-16|2,13,16|6-7,14-15|2-5,8,11-12|8-10"}
+08000c06 <sumatoria>:
+ 8000c06:       2800            cmp     r0, #0
+ 8000c08:       dd0c            ble.n   8000c24 <sumatoria+0x1e>
+ 8000c0a:       1f0a            subs    r2, r1, #4
+ 8000c0c:       eb02 0c80       add.w   ip, r2, r0, lsl #2
+ 8000c10:       2000            movs    r0, #0
+ 8000c12:       4601            mov     r1, r0
+ 8000c14:       f852 3f04       ldr.w   r3, [r2, #4]!
+ 8000c18:       1818            adds    r0, r3, r0
+ 8000c1a:       eb41 71e3       adc.w   r1, r1, r3, asr #31
+ 8000c1e:       4562            cmp     r2, ip
+ 8000c20:       d1f8            bne.n   8000c14 <sumatoria+0xe>
+ 8000c22:       4770            bx      lr
+ 8000c24:       2000            movs    r0, #0
+ 8000c26:       4601            mov     r1, r0
+ 8000c28:       4770            bx      lr
+ ```
+
+## En código máquina ARMv7-M (vista en memoria)
+
+```{.hex}
+  Offset: 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+8000cc00:                   00 28 0C DD 0A 1F 02 EB 80 0C
+8000cc10: 00 20 01 46 52 F8 04 3F 18 18 41 EB E3 71 62 45
+8000cc20: F8 D1 70 47 00 20 01 46 70 47
+```
+
+## El lenguaje C es... (1/2)
+
+De *alto nivel* : Codifica procesos en forma independiente del hardware donde se ejecutarán
+
+*Compilado* : El código fuente es traducido a código máquina antes de su ejecución
+
+## El lenguaje C es... (2/2)
+
+*Imperativo* : El programa está escrito en forma de *sentencias* o instrucciones a ejecutar. Especifica *como hacer*
+
+*Estructurado* : La secuencia en que se ejecutan las sentencias es determinada por estructuras de control
+
+*Procedimental* : Abstracción mediante procedimientos o funciones
+
+## Proceso de compilación
+
+```{mermaid}
+%%| fig-width: 100%
+flowchart LR
+    c["Archivo fuente\n.c"]
+    hs["Encabezados\n.h"]
+    o["Código objeto\n.o"]
+    cpp["Preprocesador"]
+    cc["Compilador"]
+    gas["Ensamblador"]
+    subgraph tu["Unidad de traducción"]
+        c
+        hs
+    end
+    c --> cpp
+    hs --> cpp
+    cpp -->|.i| cc
+    cc -->|.S| gas
+    gas -->o
+```
+
+## Proceso de compilación
+
+```{mermaid}
+flowchart TB
+    comp --- link
+    c["Archivo fuente\n.c"]
+    hs["Encabezados\n.h"]
+    a["Librerías\n.a"]
+    o1["Código objeto\n.o"]
+    o2["Archivos objeto\n.o"]
+    cpp["Preprocesador"]
+    cc["Compilador"]
+    gas["Ensamblador"]
+    ln[Linker]
+    exe["Ejecutable\n.elf"]
+    subgraph comp["Compilación"]
+        direction LR
+        subgraph tu["Unidad de traducción"]
+            c
+            hs
+        end
+        c --> cpp
+        hs --> cpp
+        cpp -->|.i| cc
+        cc -->|.S| gas
+        gas -->o1
+    end
+    subgraph link[Vinculación]
+        direction LR
+        o2 --> ln
+        a --> ln
+        ln --> exe
+    end
+```
+
+## Preprocesador
+
+Es un procesador de texto automático. Procesa los comentarios y comandos que empiezan por numeral `#`.
+
+- La salida del preprocesador es el texto de una unidad de traducción (archivo .c y archivos .h insertados) luego de realizar todas las sustituciones.
+
+## Preprocesador (comentarios)
+
+- Remueve los comentarios entre `/*` y `*/` así como entre `//` y el fin de línea.
+
+```{.c}
+/* Comentario de
+ * varias líneas
+ */
+int main(void)
+{ /* un comentario */
+    bool estado=0; // otro comentario
+    Pin_initPuerto(PUERTO_LED);
+    Pin_salida(PUERTO_LED /*puerto*/ ,PIN_LED /*pin*/);
+    while(1){
+        Pin_escribe(PUERTO_LED,PIN_LED,estado);
+        espera(500);
+        estado = ~estado;
+    }
+    return 0;
+}
+```
+
+## Preprocesador (include)
+
+- `#include <archivo.h>` : inserta el contenido de archivo.h en este punto antes de continuar. Busca archivo.h en los directorios de encabezados de librerías.
+- `#include "archivo.h"` : igual que el anterior, pero busca archivo.h también en la carpeta actual.
+
+## Preprocesador (define)
+
+- `#define MACRO 123`    : define una macro del preprocesador. En adelante cualquier ocurrencia de la palabra MACRO es reemplazada por 123.
+- `#define MACRO (1+44)` : si el valor de una macro es una expresión matemática **debe ir encerrado en paréntesis**.
+
+## Preprocesador (ifndef)
+
+El preprocesador permite remover parte del texto de una unidad de traducción. Por ejemplo, si la macro SIN_SUMA está definida en algún punto anterior con `#define` (sin importar su valor) entonces el código entre `#ifndef` y `#endif` es **removido** por el preprocesador.
+
+```{.c}
+#ifndef SIN_SUMA
+int suma(int a,int b){
+    return a+b;
+}
+#endif
+```
+
+## Encabezado
+
+```{.c filename="miapp.h"}
+#ifndef MIAPP_H // Para prevenir duplicar texto si aparece incluido varias veces el archivo
+#define MIAPP_H // (en la primera inclusión define la macro MIAPP_H)
+#include <stm32f1xx.h> // Inclusión anidada, definiciones del micro (GPIOC)
+
+// Macros del preprocesador
+#define PUERTO_LED GPIOC
+#define PIN_LED 13
+#define FREC_RELOJ 8000000
+
+#endif
+
+```
+## Archivo fuente
+
+```{.c filename="miapp.c"}
+/* Inserta contenido de encabezados */
+#include <stdint.h>     // define tipo uint32_t
+#include <stdbool.h>    // define tipo bool
+#include <pin.h>        // definiciones librería pin (Pin_...)
+#include "miapp.h"      // definiciones aplicación (PUERTO_LED, PIN_LED)
+
+/* Macros del preprocesador */
+#define CICLOS_ITERACION 6
+#define ITERACIONES_MILISEGUNDO \
+    (FREC_RELOJ/(1000*CICLOS_ITERACION) - CICLOS_ITERACION) 
+
+/* Función de vinculación interna (static)
+ * que acepta un parámetro (uint32_t ms)
+ * y no retorna ningún valor (void)
+ */
+static void espera(uint32_t ms)
+{ 
+    volatile uint32_t i;
+    while(ms>0){
+        i=0;
+        while(i<ITERACIONES_MILISEGUNDO){
+            ++i;
+        }
+        --ms;
+    }
+}
+/* Función main 
+ * - Debe tener vinculación externa (sin static, extern puede omitirse)
+ * - Debe retornar un valor entero (int)
+ * - Es el punto de entrada al programa 
+ */
+int main(void)
+{
+    bool estado=0;
+    Pin_initPuerto(PUERTO_LED);
+    Pin_salida(PUERTO_LED,PIN_LED);
+    while(1){
+        Pin_escribe(PUERTO_LED,PIN_LED,estado);
+        espera(500);
+        estado = ~estado;
+    }
+    return 0;
+}
+```
+
