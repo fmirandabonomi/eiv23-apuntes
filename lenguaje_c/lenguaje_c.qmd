@@ -791,6 +791,44 @@ Es un error si termina el archivo sin definir func1.
 
 En C99 se introdujo un especificador `inline` que indica que el código de la función puede ser "pegado" dentro de otra función en lugar de hacer un llamado. Esto permite evitar la sobrecarga de llamar a una función sencilla.
 
+:::{.callout-tip}
+El compilador de C solo hace la inclusión en línea del código **si está activada la optimización**. Si no está activada la optimización el compilador realizará un llamado normal en su lugar.
+:::
+
+---
+
+:::{.callout-important}
+Las funciones `inline` invierten las posiciones de la declaración y la implementación. Son implementadas en el encabezado y declaradas en un archivo .c. En el archivo donde son declaradas se genera el código accesible de forma normal (cuando no es insertada en línea).
+
+- Donde originalmente iría la declaración va la implementación calificada por `inline`.
+- Donde originalmente iría la implementación va un declaración calificada por `extern inline`. Esta declaración es especial, indica que en este punto debe compilarse la función de manera normal. Esto es necesario para el uso normal de la función, si se omitiera fallaría el linker si se compila sin optimizar o se llama la función desde un puntero.
+:::
+
+---
+
+```{.c filename="ejemplo.h"}
+#ifndef EJEMPLO_H
+#define EJEMPLO_H
+
+int fn_normal(int a,int b);
+
+inline int fn_inline(int a,int b)
+{
+    return a-b;
+}
+#endif
+```
+
+```{.c filename="ejemplo.c"}
+#include "ejemplo.h" // Este módulo
+
+int fn_normal(int a,int b){
+    return a*b;
+}
+
+// En este caso extern es necesario.
+extern inline int fn_inline(int a,int b);
+```
 
 ## Punteros
 
