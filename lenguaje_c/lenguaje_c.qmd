@@ -1,0 +1,812 @@
+---
+    author: "Ferando Alberto Miranda Bonomi"
+    title: "Lenguaje C"
+    date: last-modified
+    date-format: iso
+    format: revealjs
+    lang: es
+    bibliography: bibliografia.bib
+---
+
+## Lenguaje de programación
+
+Es un lenguaje formal que permite codificar procesos de cómputo o algoritmos de manera que puedan ser ejecutados por una computadora.
+
+## Ejemplo
+
+Sumar un arreglo de enteros con signo de 32 bit usando aritmética con signo de 64 bit.
+
+## En lenguaje C
+
+```{.C code-line-numbers="1-10|3-4,9-10|5|6,8|7"}
+#include <stdint.h>
+
+int64_t sumatoria(int32_t N,const int32_t *b )
+{
+    int64_t A=0;
+    for (int i=0;i<N;++i){
+        A += b[i];
+    }
+    return A;
+}
+```
+
+## En código ensamblador ARMv7-M
+
+```{.asm code-line-numbers="1-18|1,14,18|6-7,16-17|2-5,8-9,12-13|9-11"}
+sumatoria:
+    cmp     r0, #0
+    ble     .L4
+    subs    r2, r1, #4
+    add     ip, r2, r0, lsl #2
+    movs    r0, #0
+    mov     r1, r0
+.L3:
+    ldr     r3, [r2, #4]!
+    adds    r0, r3, r0
+    adc     r1, r1, r3, asr #31
+    cmp     r2, ip
+    bne     .L3
+    bx      lr
+.L4:
+    movs    r0, #0
+    mov     r1, r0
+    bx      lr
+```
+
+## En código máquina ARMv7-M (comentado)
+
+```{.asm code-line-numbers="1-16|2,13,16|6-7,14-15|2-5,8,11-12|8-10"}
+08000c06 <sumatoria>:
+ 8000c06:       2800            cmp     r0, #0
+ 8000c08:       dd0c            ble.n   8000c24 <sumatoria+0x1e>
+ 8000c0a:       1f0a            subs    r2, r1, #4
+ 8000c0c:       eb02 0c80       add.w   ip, r2, r0, lsl #2
+ 8000c10:       2000            movs    r0, #0
+ 8000c12:       4601            mov     r1, r0
+ 8000c14:       f852 3f04       ldr.w   r3, [r2, #4]!
+ 8000c18:       1818            adds    r0, r3, r0
+ 8000c1a:       eb41 71e3       adc.w   r1, r1, r3, asr #31
+ 8000c1e:       4562            cmp     r2, ip
+ 8000c20:       d1f8            bne.n   8000c14 <sumatoria+0xe>
+ 8000c22:       4770            bx      lr
+ 8000c24:       2000            movs    r0, #0
+ 8000c26:       4601            mov     r1, r0
+ 8000c28:       4770            bx      lr
+ ```
+
+## En código máquina ARMv7-M (vista en memoria)
+
+```{.hex}
+  Offset: 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+8000cc00:                   00 28 0C DD 0A 1F 02 EB 80 0C
+8000cc10: 00 20 01 46 52 F8 04 3F 18 18 41 EB E3 71 62 45
+8000cc20: F8 D1 70 47 00 20 01 46 70 47
+```
+
+## El lenguaje C es... (1/2)
+
+De *alto nivel* : Codifica procesos en forma independiente del hardware donde se ejecutarán
+
+*Compilado* : El código fuente es traducido a código máquina antes de su ejecución
+
+## El lenguaje C es... (2/2)
+
+*Imperativo* : El programa está escrito en forma de *sentencias* o instrucciones a ejecutar. Especifica *como hacer*
+
+*Estructurado* : La secuencia en que se ejecutan las sentencias es determinada por estructuras de control
+
+*Procedimental* : Abstracción mediante procedimientos o funciones
+
+## Proceso de compilación
+
+![](proceso_compilacion.png){fig-align="center"}
+
+## Preprocesador
+
+Es un procesador de texto automático. Procesa los *comentarios* y las *directivas del preprocesador*.
+
+La salida del preprocesador es la entrada del compilador de C propiamente.
+
+## Comentarios
+
+Un comentario es todo texto entre `/*` y `*/` o entre `//` y el fin de línea.
+
+El preprocesador elimina los comentarios, reemplazándolos por un espacio en blanco.
+
+```{.c filename="main.c"}
+/* Comentario de
+ * varias líneas
+ */
+int main(void)
+{ /* un comentario */
+    bool estado=0; // otro comentario
+    Pin_initPuerto(PUERTO_LED);
+    Pin_salida(PUERTO_LED /*puerto*/ ,PIN_LED /*pin*/);
+    while(1){
+        Pin_escribe(PUERTO_LED,PIN_LED,estado);
+        espera(500);
+        estado = !estado;
+    }
+    return 0;
+}
+```
+
+## Directivas
+
+Las directivas del preprocesador comienzan con un caracter numeral (`#`), que debe ser el primer caracter de la línea y continúan hasta el final de línea. Pueden prolongarse en varias líneas escapando las nuevas líneas con el caracter barra invertida (`\`).
+
+```{.c filename="ejemplo" code-line-numbers="1-5|1-2|3-4"}
+#include <stm32f1xx.h>
+#include "pin.h"
+#define CICLOS_ITERACION 10
+#define ITERACIONES_MILISEGUNDO \
+    (FREC_RELOJ/(1000*CICLOS_ITERACION) - CICLOS_ITERACION) 
+```
+
+## Inclusiones
+
+Las directivas `#include` son reemplazadas por el contenido de otro archivo. Luego el procesamiento continúa desde la primera línea insertada.
+
+`#include <archivo.h>` : inserta el contenido de *archivo.h* en este punto antes de continuar. Busca *archivo.h* en los directorios de encabezados de librerías.  
+`#include "archivo.h"` : igual que el anterior, pero busca *archivo.h* también en el directorio actual.
+
+## Macros
+
+`#define MACRO_1 123`    : define una macro del preprocesador. En adelante cualquier ocurrencia de MACRO_1 es reemplazada por 123.  
+`#define MACRO_1 (1+44)` : si el valor de una macro es una expresión matemática **debe ir encerrado en paréntesis**.
+
+## Compilación condicional con \#if
+
+`#if expresión` : Incluye un bloque de texto solo si la expresión es verdadera. En la expresión solo pueden particiapr *números y macros del preprocesador*. El bloque termina con `#endif` o `#else`.  
+`#else` : Luego de `#if`, termina el bloque `#if` e inicia otro que solo se incluye si el bloque `#if` *no fue incluído*. El bloque termina con `#endif`
+
+```{.c}
+#if SUMAR == 1
+// (SUMAR es una macro que vale 1)
+#else
+// (SUMAR no vale 1)
+#endif
+```
+
+## Compilación condicional con \#ifdef
+
+`#ifdef MACRO` : Incluye un bloque de texto *solo si la macro está definida* (independiente de su valor). El bloque termina en `#endif` o en un bloque `#else ... #endif`.
+
+```{.c}
+#ifdef SUMAR
+// SUMAR está definida
+#else
+// SUMAR no está definida
+#endif
+```
+## Compilación condicional con \#ifndef
+
+`#ifndef MACRO` : Incluye un bloque de texto *solo si la macro **no** está definida* (independiente de su valor). El bloque termina en `#endif` o en un bloque `#else ... #endif`.
+
+Suele emplearse como guarda en los archivos de cabecera para evitar copiar varias veces el texto si son incluídos varias veces.
+
+```{.c}
+#ifndef SUMAR
+// SUMAR no está definida
+#define SUMAR
+// A partir de aquí SUMAR está definida
+#endif
+#ifndef SUMAR
+// Esto nunca se incluye
+#endif
+```
+
+## Encabezado
+
+Los archivos de encabezados incluyen definición de macros y declaración de funciones, tipos, y variables.
+
+Las funciones declaradas en un encabezado están definidas en otros archivos fuente o son parte de librerías.
+
+```{.c filename="miapp.h"}
+#ifndef MIAPP_H
+#define MIAPP_H
+#include <stm32f1xx.h>
+
+#define PUERTO_LED GPIOC
+#define PIN_LED 13
+#define FREC_RELOJ 8000000
+#endif
+
+```
+## Archivo fuente
+
+En el archivo fuente se definen las funciones que contienen el código del programa, variables estáticas globales (de enlace externo) y variables estáticas de enlace interno (visibles solo dentro del archivo donde se declaran).
+
+---
+
+```{.c filename="espera.c"}
+#include <stdbool.h>     // bool
+#include <stdint.h>      // uint32_t
+#include <stm32f1xx.h>   // SysTick_Config, SystemCoreClock, __WFE
+#include "espera.h"      // este módulo
+static bool inicializado = 0;
+static volatile uint32_t ticks;
+static void inicializa(void){
+    SysTick_Config(SystemCoreClock/1000);
+    inicializado = 1;
+}
+void SysTick_Handler(void){
+    ++ticks;
+}
+void espera(uint32_t ms){
+    if (!inicializado) inicializa();
+    const actual = ticks;
+    while ((ticks - actual) < ms) __WFE();
+}
+```
+
+## Función main
+
+El punto donde inicia la ejecución de nuestro programa se denomina punto de entrada. En C el punto de entrada de nuestro programa es una función llamada main que *debe retrornar un valor entero*. Si esta función retorna el programa termina. En el software embebido esta función tendrá un lazo infinito, no retornará nunca.
+
+---
+
+```{.c filename="miapp.c"}
+#include <stdbool.h> // bool
+#include "pin.h"     // Pin_salida, Pin_escribe
+#include "espera.h"  // espera
+#include "miapp.h"   // este módulo
+int main(void)
+{
+    bool estado=0;
+    Pin_salida(PUERTO_LED,PIN_LED);
+    while(1){
+        Pin_escribe(PUERTO_LED,PIN_LED,estado);
+        espera(500);
+        estado = !estado;
+    }
+    return 0;
+}
+```
+
+## Declaraciónes
+
+Una declaración indica la existencia de una variable o función, define su tipo, modo de acceso y (en el caso de variables) puede definir su valor inicial. La declaración de una variable realiza la correspondiente reserva de memoria.
+
+```{.c filename="Declaración de variable"}
+  static const signed int mivar_1 = 10;
+/*────── ───── ────────── ─────── ────
+ *   ↑     ↑        ↑        ↑      ↑
+ *   │     │        │        │      └── Inicializador
+ *   │     │        │        └ Declarador de variable
+ *   │     │        └──────── Especificadores de tipo
+ *   │     └───────────────────── Calificador de tipo
+ *   └────── Especificador de clase de almacenamiento
+ */
+```
+
+---
+
+```{.c filename="Declaraciones múltiples"}
+  int A, B = 5, *C = &B;
+/*─── ─  ─ ───  ── ────
+ * ↑  ↑  ↑  ↑    ↑   ↑
+ * │  │  │  │    │   └──── Inicializador ⎫ Lista
+ * │  │  │  │    └ Declarador de puntero ⎪ de
+ * │  │  │  └───────────── Inicializador ⎬ declaradores
+ * │  │  └─────── Declarador de variable ⎪ e
+ * │  └────────── Declarador de variable ⎭ inicializadores
+ * └───────────────────────────────── Especificador de tipo 
+ *
+ * Una declaración fuera de una función tiene
+ * por defecto la clase de almacenamiento
+ * extern
+ */
+```
+
+---
+
+```{.c filename="declaración de función void"}
+  void funcion1(int a,int b);
+/*──── ────────┴────────────
+ * ↑      ↑          ↑
+ * │      │          └ Lista de parámetros⎱ Declarador de
+ * │      └───────────────── Identificador⎰ función
+ * └──────────────── Especificador de tipo retornado
+ */
+```
+
+---
+
+```{.c filename="declaración de función que retorna puntero"}
+  void *funcion2(int a,int b);
+/*──── ─┴───────┴────────────
+ * ↑   ↑  ↑          ↑
+ * │   │  │          └ Lista de parámetros⎫ Declarador de
+ * │   │  └───────────────── Identificador⎬ función que
+ * │   └────────── Retorna puntero a tipo ⎭ retorna puntero
+ * └─────────────── Especificador de tipo
+ */
+```
+
+## Memoria de datos
+
+Un microcontrolador posee al menos memoria de programa no volátil (usualmente flash) y memoria de datos volátil (usualmente sram). La memoria de programa contiene al programa y las constantes. La memoria de datos contiene las variables.
+Nota: Para usar una variable en un cómputo (parte de) su valor debe copiarse a los registros del procesador.
+
+## Organización de memoria de datos
+
+![](org_mem_datos.png){fig-align="center"}
+
+## Clases de almacenamiento
+
+En C las variables pueden tener distintas clases de almacenamiento según la forma en que se reserva memoria para las mismas. Las clases de almacenamiento más relevantes son estático y automático.
+
+---
+
+*Almacenamiento estático* : La memoria es reservada en tiempo de compilación (antes de ejecutar el programa) en las secciones .data (inicializadas a algún valor) y .bss (inicializadas a cero).
+
+- Variables declaradas fuera de una función
+- Variables dentro de una función con especificador `static`
+
+---
+
+*Almacenamiento automático* : La memoria es reservada en la pila de llamados al activarse una función y liberada al retornar.
+
+- Variables declaradas dentro de una función sin especificador o con especificador `auto` (en desuso, al igual que `register`)
+
+- Los parámetros de una función son variables con esta clase de almacenamiento
+
+---
+
+*Almacenamiento en registro* : En lo posible la variable se mantendrá en un registro del procesador. No puede obtenerse su dirección (se supone que no está en memoria). 
+
+- Variables declaradas dentro de una función con especificador `register`
+
+:::{.callout-warning}
+
+Esta clase **es obsoleta**. El compilador hace la optimización en forma automática cuando es oportuno con una variable auto. **No usar**.
+
+:::
+
+## Definición de tipo
+
+La definición de tipo es considerada una clase de almacenamiento, pero no reserva memoria para una variable sino que convierte el identificador en un nombre abreviado para el tipo de datos especificado. Se indica con `typedef`
+
+```{.c}
+// Define el tipo dword como sinónimo
+// de long long int
+typedef long long int dword;
+```
+
+## Vinculación o enlace
+
+Las variables son símbolos asociados a espacios de memoria que almacenan datos. La vinculación o enlace determina el ámbito desde el es accesibles una variable declarada fuera de una función.
+
+---
+
+**Sín vinculación** : variables declaradas dentro de una función (estáticas o automáticas) y parámetros, solo pueden ser accedidas dentro del bloque de código donde fueron declaradas.
+
+```{.c filename="Ejemplo"}
+// a, b y c son variables 
+// con almacenamiento automático
+// y sin vinculación
+int suma(int a,int b){
+    int c = a+b;
+    return c;
+}
+// numeros es una variable
+// con almacenamiento estático
+// y sin vinculación
+int main(void){
+    static int numeros[500];
+    ...
+}
+```
+---
+
+**Vinculación interna** : variables `static` declaradas fuera de una función. Solo son accesibles desde el código de la unidad de traducción (archivo .c y encabezados incluidos) donde fueron declaradas, a partir del primer punto en que fueron declaradas.
+
+```{.c filename="Ejemplo"}
+static int mivar1;
+```
+
+---
+
+**Vinculación externa** : variables `extern` (o sin especificador) declaradas dentro (no recomendable) o fuera de una función. Son accesibles desde cualquier unidad de traducción (archivo .c) y desde el código externo si se trata de una librería.
+
+```{.c filename="Ejemplo"}
+int numero_global;
+extern int numero_global;
+```
+
+## Calificadores
+
+Indican al compilador como se debe utilizar una variable. Los calificadores son `const`, `volatile` y `restrict`.
+
+:::{.callout-note}
+Desde C11 existe el calificador _Atomic, que garantiza que las operaciones de incremento (`++`), decremento (`--`) y asignación compuesta (`+=`, `-=`, `|=`, `&=`, etc.) se *ejecutan sin interrupción* en casos donde varios procesos pueden acceder concurrentemente a memoria.
+Todo esto implica también que los accesos se suponen con efecto secundario, de la misma forma que *volatile*.
+:::
+
+---
+
+**Calificador const** : Indica que la variable es de solo lectura. Debe asignarsele un valor al declararla (excepto variables extern, que solo en una de sus declaraciones puede tener asignado un valor). Si califica el tipo apuntado por un puntero indica que ese puntero puede ser usado solo para leer pero no para modificar memoria.
+
+```{.c filename="Ejemplo"}
+int suma(int a,int b){
+    const int c = a + b;
+    return c; 
+}
+int strlen(const char *c){
+    int A=0;
+    while(*c){ // lee
+        ++A;
+        ++c; // desplaza puntero
+    }
+    return A;
+}
+```
+
+---
+
+**Calificador volatile** : Inidica que el contenido de la variable puede tener un efecto secundario sobre el hardware o bien ser afectado por el hardware en forma independiente al flujo normal del programa. Debe ser usado si una variable es accedida desde una rutina de servicio de interrupción. 
+
+```{.c filename="Ejemplo"}
+volatile unsigned long ticks;
+// Rutina de servicio de interrupción llamada
+// por el timer SysTick una ves por milisegundo
+void SysTick_Handler(void){
+    ++ticks;
+}
+
+void espera(unsigned long ms){
+    const unsigned long inicial = ticks;
+    while(ticks - inicial < ms)
+        __WFE();
+}
+```
+
+## Tipos de datos
+
+En C cada *variable* tiene asociado un tipo de dato, que determina la cantidad de memoria que requiere y la interpretación hace el compilador sobre el contenido de esa memoria. C tiene tipos básicos y derivados.
+
+Los **tipos básicos** en C son `void`, *tipos aritméticos*, *tipos definidos por el usuario* con `typedef`, *estructuras*, *uniones* y *enumeraciones*.
+
+Los tipos derivados son arreglos, funciones, punteros y (desde C11) tipos atómicos.
+
+---
+
+`void` : El tipo void es un tipo especial que indica que no hay un valor.
+
+- No puede declararse una variable `void`.
+- Si una función indica como tipo retornado `void` significa que no retorna ningún valor.
+- Si la lista de parámetros de una función es `(void)` indica que la función no toma ningún parámetro.
+- Un puntero a `void` es un puntero universal, debe convertirse a otro tipo de puntero para usarse y puede asignársele la dirección de cualquier puntero excepto un puntero a función.
+
+---
+
+```{.c filename="ejemplo"}
+
+/* Una rutina de servicio de interrupción
+ * es llamada por hardware. No puede recibir
+ * parámetros ni retornar valor (pues no hay
+ * quien lo reciba).
+ */ 
+   void SysTick_Handler(void){...}
+/*   ↑                    ↑
+ *   │                    └ No acepta argumentos
+ *   └───────────────────────── No retorna valor
+ */
+
+/* Función de librería estándar que reserva
+ * memoria en forma dinámica en el Heap.
+ * Retorna un puntero sin tipo, que indica
+ * una dirección de memoria sobre cuyo contenido
+ * no se tiene ninguna información.
+ */
+    void * malloc(size_t size);
+```
+
+---
+
+*Tipos aritméticos* : indican que una variable contiene un valor numérico.
+
+```{.c filename="Tipos enteros"}
+// Tipo lógico. Solo toma valores 0 (falso) y 1(verdadero). En ARM 8 bits
+_Bool flag=1;
+// Tipos de caracter. Enteros de al menos 8 bits. En ARM 8 bits
+char caracter='A'; // usado para representar caracteres.
+signed char x=123; // con signo
+unsigned char y=0b11011001; // sin signo
+// Enteros cortos, al menos 16 bits. En ARM 16 bits
+signed short int A=23; // Sinónimos: signed short, short, short int
+unsigned short int B=52300U; // sin signo. Sinónimo: unsigned short
+// Enteros. Al menos 16 bits. En ARM 32 bits
+signed int C=-19384; // Sinónimos: int, signed
+unsigned int D=0x1234U; // sin signo. Sinónimo: unsigned
+// Enteros largos. Al menos 32 bits. En ARM 32 bits
+signed long int E=1293L; // Sinónimos: long int, signed long, long
+unsigned long int F=998310LU; // sin signo. Sinónimo: unsigned long
+// Enteros extendidos. Al menos 64 bits. En ARM 64 bits
+signed long long int G=234102391304LL; // signed long long, long long
+unsigned long long int H=0x0123456789ABCDEFLLU; // unsigned long long
+```
+
+---
+
+```{.c filename="Tipos de punto flotante"}
+// El soporte por hardware está en la unidad de punto flotante (FPU), no en el CPU
+// Cortex-M3 no inclue FPU, Cortex-M4 Sí
+// Emulados por software, computacionalmente costoso
+float a = 1.45e-45; // Punto flotante de 32 bit
+double b = 1.4535e-500; // Punto flotante de 64 bit
+long double c = 1.234204221;
+```
+
+## Enumeraciónes
+
+Las enumeraciones son tipos que pueden tomar un valor entre un conjunto discreto de valores asociados a nombres. Los nombres operan como constantes enteras válidas en el ámbito donde es visible el tipo. El tamaño en memoria de una variable de tipo enum depende de la implementación y del tamaño de las constantes numéricas.
+Los valores de las constantes de una enumeración son enteros y pueden asignarse también a variables enteras.
+
+---
+
+```{.c filename="Ejemplo"}
+// Si no se dan valores explícitamente
+// el primer elemento será cero y subsiguientes
+// elementos toman el valor siguiente del elemento
+// anterior
+typedef enum {
+    FUERA_DE_SERVICIO,  // FUERA_DE_SERVICIO vale 0
+    VERDE = 10,         // VERDE vale 10
+    AMARILLO,           // AMARILLO vale 11
+    ROJO,               // ROJO vale 12
+}EstadoSemaforo;
+```
+
+## Estructuras
+
+Un tipo estructura es una concatenacion de uno o mas tipos de datos. Son **conjunciones** de tipos, es decir 
+
+`struct{int a,char b,int c} mivar;`
+
+reserva memoria para a **y** b **y** c. Además reservará memoria para mantener la alineación en memoria de modo que c comienze en dirección par.
+
+---
+
+```{.c filename="Ejemplo"}
+/*  ┌──── Palabra clave, indica que es un tipo estructura
+    │         ┌ Etiqueta que se refiere a esta definición
+    │         │     ┌──── Definición de struct Estructura
+    ↓         ↓     ↓       */
+  struct Estructura {
+      int miembro_1;
+      // Definición de estructura anónima (sin etiqueta)  
+      struct {
+          long parte_1;
+          long parte_2;
+      }miembro_2;
+      // Los miembros pueden ser arreglos
+      char miembro_3[20];
+      // Los miembros pueden ser punteros
+      unsigned long *miembro_4;
+  } var1, *var2;
+```
+
+---
+
+```{.c filename="Ejemplo (continuación)"}
+// Define un tipo Estructura
+typedef struct Estructura Estructura;
+// Tipo Estructura
+Estructura var3;
+// Equivalente
+struct Estructura var4;
+
+ int main(void){
+    var2 = &var1;
+    // Acceso a miembros de estructura
+    var1.miembro_1 = 5;
+    var1.miembro_2.parte_1 = 4;
+    // Acceso a miembros desde puntero a estructura
+    var2->miembro_3[5]=4;
+    // Forma equivalente (pero no usada). LOS PARÉNTESIS SON NECESARIOS
+    (*var2).miembro_3[6]=5;
+    return 0;
+ }
+```
+
+---
+
+```{.c filename="Estructuras como valores"}
+typedef struct Punto{
+    int x,y;
+} Punto;
+Punto Punto_suma(Punto a,Punto b){
+    // a y b son copias (pasaje por valor)
+    // Literal compuesto de tipo estructura
+    return (Punto){.x = a.x + b.x,
+                   .y = a.y + b.y};
+}
+int main(void){
+    // inicialización
+    Punto a={1,4},c={0}; // con lista
+    Punto b={.y=7};      // con designación
+    // Miembros omitidos son inicializados a 0
+    c = Punto_suma(a,b); // no altera a y b
+    return 0;
+}
+```
+
+---
+
+```{.c filename="Uso de punteros a estructura"}
+typedef struct MiEstado{
+    uint32_t R[16], xpsr;
+} MiEstado; // Ocupa 68 bytes
+void muestraEstado_copia(MiEstado e){
+    // Cada vez que se llama a esta función
+    // se copian los 68 bytes!
+    ...
+}
+void muestraEstado_ptr(MiEstado *e){
+    // Esta función tiene acceso de escritura
+    // al estado, es INSEGURO!
+    ...
+}
+void muestraEstado_cptr(const MiEstado *e){
+    // Es la mejor manera. Omite copiar el estado
+    // pero lo proteje contra cambios imprevistos
+    ...
+}
+```
+
+## Uniones
+
+Un tipo union es un tipo que puede contener valores de otros tipos, pero solo un valor por vez. Son **disyunciones** de tipos, es decir 
+
+`union {int a,char b,long long c} mivar;`
+
+reserva memoria para el más grande entre a,b y c. Puede contener a **o** b **o** c, pero **solo uno por vez**. Al usar uniones lo mejor es ubicarlas dentro de estructuras donde otro miembro determine *cual de los valores es contenido*.
+
+---
+
+```{.c filename="Ejemplo (1/2)"}
+typedef struct Var{
+    enum {ERROR,NUM_16,NUM_32,NUM_64} tipo;
+    // Si no se indica miembro, los miembros de la
+    // union se acceden como si fuesen miembros de
+    // la estructura
+    union{
+        enum CodigoError error;
+        int16_t v16;
+        int32_t v32;
+        int64_t v64;
+    };
+} Var;
+```
+
+---
+
+```{.c filename="Ejempo (2/2)"}
+Var recibe_elemento(void){
+    Var r;
+    recibe_bytes(sizeof(r.tipo),&r.tipo);
+    switch(r.tipo){
+    case ERROR:
+        recibe_bytes(sizeof(r.error),&r.error);
+    break;case NUM_16:
+        recibe_bytes(2,&r.v16);
+    break;case NUM_32:
+        recibe_bytes(4,&r.v32);
+    break;case NUM_64:
+        recibe_bytes(8,&r.v64);
+    break;default:
+        r.tipo = ERROR;
+        r.error = MENSAJE_NO_VALIDO;
+    }
+    return r;
+}
+
+```
+## Tipo función
+
+Las funciones son los objetos que contienen el código ejecutable del programa. Su tipo define la interfaz entre el código que contienen y el resto del programa. Cuando se declara una función esto no reserva memoria alguna, sino que indica al compilador que en algún lado existe una definición de función con el mismo nombre que contiene código ejecutable, e indica como interactuar con ese código.
+
+---
+
+El tipo función es una clase de tipo derivado, donde el tipo base identifica el tipo retornado por la función, y además se especifican otros tipos que corresponden a los argumentos de la función. Un declarador de función se construye ubicando una lista de argumentos entre paréntesis a la derecha del identificador. Si una función no retorna valor su tipo base debe ser *void*. Y si no acepta argumentos la lista de argumentos debe contener solo uno, de tipo *void*.
+
+:::{.callout-note}
+En este curso trataremos la declaración de funciones moderna, correspondiente a C99 y posterior. La forma histórica sigue siendo soportada pero no es recomendable.
+:::
+
+---
+
+```{.c filename="Ejemplo"}
+  int f1(void), f2(int,int);
+/*─── ────────  ─────────── 
+ * ↑  ↑         ↑
+ * │  │         └ Declarador de función que
+ * │  │           acepta dos argumentos enteros
+ * │  │           y retorna un valor entero
+ * │  │
+ * │  └──── Declarador de función que no acepta
+ * │        argumentos y retorna un valor entero
+ * │
+ * └───── Tipo base entero, determina el tipo de
+ *        valor retornado.
+ */
+```
+
+:::{.callout-note}
+Si bien este ejemplo declara dos funciones
+en con el mismo especificador de tipo base,
+es conveniente por claridad declarar cada
+función por separado.
+:::
+
+---
+
+```{.c filename="Ejemplo"}
+typedef struct Opc_ResultadoDiv{
+    bool es_resultado;
+    int cociente;
+    int resto;
+} Opc_ResultadoDiv;
+
+Opc_ResultadoDiv dividir(int numerador,int denominador);
+/*
+ * Declaración de una función dividir que  acepta dos
+ * argumentos enteros y retorna un valor tipo estructura
+ * El nombre dado a los argumentos es opcional, pero
+ * recomendable por claridad
+ */
+```
+
+:::{.callout-note}
+El tipo `Opc_ResultadoDiv` comienza su nombre por Opc_ por
+*opcional*. En caso de que `es_resultado` sea *falso* significa
+que ocurrió un problema (divisor cero) y no fue posible 
+determinar el resultado. Este clase de tipo de estructura 
+Op_... es práctico en casos donde puedan ocurrir errores.
+:::
+
+---
+
+Si el tipo de una declaración de función tiene el especificador *static*, se está declarando una función visible solo dentro de la unidad de traducción (archivo .c y encabezados) actual.
+En ese caso la función debe ser definida en la misma unidad de traducción donde fue declarada.
+
+```{.c filename="Ejemplo"}
+static int func1(int a,char b);
+int main(void){
+    return func1(1,3);
+}
+static int func1(int a,int b){
+    return (b-a)*(b+a);
+}
+```
+
+:::{.callout-caution}
+Es un error si termina el archivo sin definir func1.
+:::
+
+## Funciones inline
+
+En C99 se introdujo un especificador `inline` que indica que el código de la función puede ser "pegado" dentro de otra función en lugar de hacer un llamado. Esto permite evitar la sobrecarga de llamar a una función sencilla.
+
+
+## Punteros
+
+Un puntero es un tipo derivado cuyo valor es una dirección de memoria que, a su vez, contiene un objeto del tipo base. El tipo base puede ser cualquier otro tipo.
+
+:::{.callout-caution}
+El tipo puntero se indica con un asterisco a la izquierda del identificador. Debido a la precedencia de operaciones, el asterisco se procesa *después* que los paréntesis y los corchetes que indican los tipos función y arreglo respectivamente. En estos casos deben usarse paréntesis para forzar que se evalúe primero el indicador de puntero.
+:::
+
+---
+
+```{.c filename="Ejemplos"}
+int x=5, *a=&x, **b=&a, ***c=&b;
+/* x es una variable entero
+ * a es una variable puntero a entero
+ * b es una variable puntero a puntero a entero
+ * c es una variable puntero a puntero a puntero a entero
+ */
+```
