@@ -889,8 +889,14 @@ Un arreglo es un tipo de datos compuesto que contiene varias instancias del tipo
    *      bidimensional de 3x2 enteros.
    */
 ```
-
 ---
+
+Disposición en memoria arreglos en el ejemplo
+
+![Nota: `&x` produce la dirección de `x` y `&x[1]` equivale a `&(x[1])`](memoria_arreglos.png)
+
+
+## Limitaciones
 
 :::{.callout-important}
 Pueden declararse arreglos de arreglos de cualquier tipo base, arreglos de arreglos y arreglos de punteros. No pueden declararse arreglos de funciones (pero sí de punteros a funciones). Una función no puede retornar un tipo arreglo. Se puede indicar un arreglo como parámetro de una función, pero en ese caso no se copiará el arreglo como parámetro sino que el parámetro será un puntero al primer elemento del arreglo. En el caso de un parámetro de función, como es simplemente un puntero, se puede omitir el número de elementos en el declarador de arreglo más exterior (última dimensión de un arreglo multidimensional o el único de un arreglo simple).
