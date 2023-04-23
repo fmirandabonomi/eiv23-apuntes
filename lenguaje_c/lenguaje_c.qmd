@@ -411,9 +411,24 @@ static int mivar1;
 
 **Vinculación externa** : variables `extern` (o sin especificador) declaradas dentro (no recomendable) o fuera de una función. Son accesibles desde cualquier unidad de traducción (archivo .c) y desde el código externo si se trata de una librería.
 
-```{.c filename="Ejemplo"}
-int numero_global;
+```{.c filename="ejemplo.h"}
+#ifndef EJEMPLO_H
+#define EJEMPLO_H
+// Esta es una declaración externa que no reserva espacio
 extern int numero_global;
+#endif
+
+```
+
+```{.c filename="ejemplo.c"}
+#include <ejemplo.h>
+// Si se omite extern la declaración también es externa 
+// pero sí reserva espacio. Solo puede hacerse reserva 
+// de espacio en un archivo .c, en los demás archivos
+// que acceden la variable debe usarse extern
+// (normalmente se hace al incluir ejemplo.h)
+int numero_global;
+
 ```
 
 ## Calificadores
@@ -707,9 +722,39 @@ Var recibe_elemento(void){
 ```
 ## Tipo función
 
-Las funciones son los objetos que contienen el código ejecutable del programa. Su tipo define la interfaz entre el código que contienen y el resto del programa. Cuando se declara una función esto no reserva memoria alguna, sino que indica al compilador que en algún lado existe una definición de función con el mismo nombre que contiene código ejecutable, e indica como interactuar con ese código.
+Las funciones son los objetos que contienen el código ejecutable del programa. Su tipo define la interfaz entre el código que contienen y el resto del programa. Cuando se declara una función esto no reserva memoria alguna, sino que indica al compilador que existe una definición de función con el mismo nombre que contiene código ejecutable, e indica como interactuar con ese código.
+
+:::{.callout-note}
+En el caso de las funciones inline, la definición toma el lugar de la declaración y hay una declaración en el punto donde sería la definición.
+:::
+
+## Llamado a función
+
+Para hacer uso de una función se emplea una expresión de llamado a función. Dicha expresión consiste en el identificador (nombre) seguido de la lista de parámetros entre paréntesis. Los paréntesis indican que es un llamado a función. En caso de que la función no acepte parámetros debe usarse una lista vacía "`()`".
 
 ---
+
+```{.c filename="Ejemplo"}
+#include <stdio.h>  // puts, fputs, stderr, EOF
+#include <stdlib.h> // exit
+static void decir_hola(void){
+    // Llamado a puts, acepta un parámetro y retorna un valor entero
+    const int resultado = puts("Hola Mundo!\n");
+    if (resultado == EOF){
+        // El valor retornado por fputs es ignorado.
+        fputs("Error al escribir en STDOUT\n",stderr);
+        exit(1);
+    }
+}
+int main(void)
+{
+    // decir_hola no acepta parámetros ni retorna valor. Los paréntesis
+    // vacíos indican que es un llamado a función y son necesarios.
+    decir_hola();
+}
+```
+
+## Declaración de funciones
 
 El tipo función es una clase de tipo derivado, donde el tipo base identifica el tipo retornado por la función, y además se especifican otros tipos que corresponden a los argumentos de la función. Un declarador de función se construye ubicando una lista de argumentos entre paréntesis a la derecha del identificador. Si una función no retorna valor su tipo base debe ser *void*. Y si no acepta argumentos la lista de argumentos debe contener solo uno, de tipo *void*.
 
@@ -830,6 +875,56 @@ int fn_normal(int a,int b){
 extern inline int fn_inline(int a,int b);
 ```
 
+## Arreglos
+
+Un arreglo es un tipo de datos compuesto que contiene varias instancias del tipo de dato base dispuestas en forma contigua en memoria. El declarador de arreglo es indicado por un par de corchetes a la derecha del resto del declarador. Dentro de los corchetes se indica el número de elementos del arreglo. Un arreglo reserva memoria para todos sus elementos.
+
+```{.c filename="Ejemplo"}
+  int var1[5], var2[3][2];
+  /*
+   * El especificador de tipo base es entero (int)
+   * var1 es un arreglo de 5 enteros
+   * var2 es un arreglo de 3 arreglos de 2 enteros.
+   *      Lo que puede considerarse un arreglo
+   *      bidimensional de 3x2 enteros.
+   */
+```
+
+---
+
+:::{.callout-important}
+Pueden declararse arreglos de arreglos de cualquier tipo base, arreglos de arreglos y arreglos de punteros. No pueden declararse arreglos de funciones (pero sí de punteros a funciones). Una función no puede retornar un tipo arreglo. Se puede indicar un arreglo como parámetro de una función, pero en ese caso no se copiará el arreglo como parámetro sino que el parámetro será un puntero al primer elemento del arreglo. En el caso de un parámetro de función, como es simplemente un puntero, se puede omitir el número de elementos en el declarador de arreglo más exterior (última dimensión de un arreglo multidimensional o el único de un arreglo simple).
+:::
+
+---
+
+:::{.callout-note}
+El valor asociado al nombre de un arreglo en sí mismo es la dirección en memoria de su primer elemento (algo similar ocurre con una función). Para acceder al valor de un elemento del arreglo se indica entre corchetes, a la derecha del identificador, el índice del elemento en base a 0 (el primer elemento tiene índice 0, el segundo índice 1, etc.). La misma notación se puede emplear con punteros para acceder a un elemento de un arreglo usando un puntero al primer elemento del arreglo.
+:::
+
+```{.c filename="Ejemplo"}
+int A[5]={1,2,3,4,5};
+int main(void){
+    // pA contiene la dirección base de A
+    int *pA = A;
+    printf("Cuarto elemento de A : %d",A[3]);
+    // Se puede usar la misma notación con el arreglo
+    // o un puntero a su dirección base
+    printf("Segundo elemento de A : %d",pA[1]);
+    return 0;
+}
+```
+
+---
+
+```{.c}
+// Las dos declaraciones son equivalentes
+uint32_t suma(int n, int numeros[]);
+uint32_t suma(int n, int *numeros);
+
+int f1(int argc,char *argv[])
+```
+
 ## Punteros
 
 Un puntero es un tipo derivado cuyo valor es una dirección de memoria que, a su vez, contiene un objeto del tipo base. El tipo base puede ser cualquier otro tipo.
@@ -847,4 +942,18 @@ int x=5, *a=&x, **b=&a, ***c=&b;
  * b es una variable puntero a puntero a entero
  * c es una variable puntero a puntero a puntero a entero
  */
+ int *x[4], (*y)[6];
+ // x es un arreglo de cuatro punteros a entero.
+ // y es un puntero a arreglo de cuatro enteros.
 ```
+
+:::{.callout-tip}
+Notar en el ejemplo la diferencia entre x e y. La variable x almacena cuatro punteros a entero, mientras que y es un puntero a un arreglo de seis enteros.
+
+`x[0]` es un puntero a entero.  
+`y[0]` es un arreglo de 4 enteros.
+
+La variable x contiene 4 punteros, por tanto su tamaño en memoria es el cuádruple de la variable y.
+:::
+
+---
