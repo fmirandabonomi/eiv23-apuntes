@@ -108,11 +108,9 @@ Es un procesador de texto automático. Procesa los *comentarios* y las *directiv
 
 La salida del preprocesador es la entrada del compilador de C propiamente.
 
-## Comentarios
+---
 
-Un comentario es todo texto entre `/*` y `*/` o entre `//` y el fin de línea.
-
-El preprocesador elimina los comentarios, reemplazándolos por un espacio en blanco.
+Un comentario es todo texto entre `/*` y `*/` o entre `//` y el fin de línea. El preprocesador elimina los comentarios, reemplazándolos por un espacio en blanco.
 
 ```{.c filename="main.c"}
 /* Comentario de
@@ -132,7 +130,7 @@ int main(void)
 }
 ```
 
-## Directivas
+---
 
 Las directivas del preprocesador comienzan con un caracter numeral (`#`), que debe ser el primer caracter de la línea y continúan hasta el final de línea. Pueden prolongarse en varias líneas escapando las nuevas líneas con el caracter barra invertida (`\`).
 
@@ -543,6 +541,37 @@ unsigned long int F=998310LU; // sin signo. Sinónimo: unsigned long
 signed long long int G=234102391304LL; // signed long long, long long
 unsigned long long int H=0x0123456789ABCDEFLLU; // unsigned long long
 ```
+---
+
+:::{.callout-tip}
+El compilador de C acepta las siguientes constantes numéricas enteras:
+
+- **Binario:** indicado con el prefijo `0b`. Ej. `0b111010011`  
+- **Octal (base 8):** indicado anteponiendo un cero. Ej. `0723`.
+- **Decimal:** un número decimal *sin ceros a la izquierda*. Ej. `467`.
+- **Hexadecimal:** indicado con el prefijo `0x`. Ej. `0x1d3` o `0x1D3`.
+:::
+
+---
+
+:::{.callout-tip}
+Para indicar el tipo del entero se usan sufijos, que pueden ubicarse en cualquier orden.
+
+- Sin sufijos es un tipo `int` (entero con signo de al menos 16 bit, en ARM 32 bit).
+- Sufijo `U` o `u` indica `unsigned` (entero sin signo).
+- Sufijo `L` o `l` indica `long` (al menos 32 bit). *Usar siempre `L` para evitar confusión con el número uno `1`.*
+- Sufijo `LL` o `ll` indica `long long` (al menos 64 bit). *Usar siempre `LL` para evitar confusión con el número uno `1`.*
+:::
+
+```{.c filename="Constantes enteras"}
+int A=0b111010011,B=0773,C=467,D=0x1d3,E=-1230;
+unsigned u=0x1123U;
+long x=1922L, y=0655733L, z=-1923L;
+unsigned long  v=0x12345678LU;
+long long w=-80123456789LL;
+unsigned long long m=0xDEADBEEFDEADBEEFuLL;
+```
+
 
 ---
 
@@ -554,6 +583,12 @@ float a = 1.45e-45; // Punto flotante de 32 bit
 double b = 1.4535e-500; // Punto flotante de 64 bit
 long double c = 1.234204221;
 ```
+
+:::{.callout-important}
+Si es necesario usar punto flotante y se requiere procesamiento rápido y/o bajo consumo, uno de los requerimientos a la hora de elegir un microcontrolador es que cuente con unidad de punto flotante (FPU).
+
+Si el rendimiento no es importante muchas veces es suficiente con el punto flotante emulado.
+:::
 
 ## Enumeraciónes
 
@@ -574,6 +609,10 @@ typedef enum {
     ROJO,               // ROJO vale 12
 }EstadoSemaforo;
 ```
+
+:::{.callout-tip}
+Al definir una enumeración se crean constantes enteras para sus valores. Estas constantes son símbolos del compilador, no macros. Valen solo en el ámbito dentro del cual se definió la enumeración y pueden incorporarse en la información de depuración.
+:::
 
 ## Estructuras
 
@@ -898,38 +937,101 @@ Disposición en memoria arreglos en el ejemplo
 
 ## Limitaciones
 
-:::{.callout-important}
-Pueden declararse arreglos de arreglos de cualquier tipo base, arreglos de arreglos y arreglos de punteros. No pueden declararse arreglos de funciones (pero sí de punteros a funciones). Una función no puede retornar un tipo arreglo. Se puede indicar un arreglo como parámetro de una función, pero en ese caso no se copiará el arreglo como parámetro sino que el parámetro será un puntero al primer elemento del arreglo. En el caso de un parámetro de función, como es simplemente un puntero, se puede omitir el número de elementos en el declarador de arreglo más exterior (última dimensión de un arreglo multidimensional o el único de un arreglo simple).
-:::
+- No pueden declararse arreglos de funciones (pero sí de punteros a funciones).
+- Una función no puede retornar un tipo arreglo (aunque sí una estructura conteniendo un arreglo).
+- Se puede indicar un arreglo como parámetro de una función, pero en ese caso no se copiará el arreglo por valor sino que se pasará puntero al primer elemento del mismo.
 
----
-
-:::{.callout-note}
-El valor asociado al nombre de un arreglo en sí mismo es la dirección en memoria de su primer elemento (algo similar ocurre con una función). Para acceder al valor de un elemento del arreglo se indica entre corchetes, a la derecha del identificador, el índice del elemento en base a 0 (el primer elemento tiene índice 0, el segundo índice 1, etc.). La misma notación se puede emplear con punteros para acceder a un elemento de un arreglo usando un puntero al primer elemento del arreglo.
-:::
+## Indexado
 
 ```{.c filename="Ejemplo"}
-int A[5]={1,2,3,4,5};
-int main(void){
-    // pA contiene la dirección base de A
-    int *pA = A;
-    printf("Cuarto elemento de A : %d",A[3]);
-    // Se puede usar la misma notación con el arreglo
-    // o un puntero a su dirección base
-    printf("Segundo elemento de A : %d",pA[1]);
-    return 0;
+int  A[5]={1,2,3,4,5};
+
+int primer_elemento_de_A(void){
+    return A[0]; // Comienza de 0
+}
+int segundo_elemento_de_A(void){
+    return A[1];
+}
+int * direccion_de_A(void){
+    return A; // Sin corchete!
+}
+int * direccion_quinto_elemento_de_A(void){
+    return &A[4];
+}
+```
+
+## Arreglos como parámetros de funciones
+
+```{.c}
+// Las dos declaraciones son equivalentes
+// Nota: Hay que especificar la longitud!
+uint32_t suma(int n, int numeros[]);
+uint32_t suma(int n, int *numeros);
+// Arreglos de longitud variable (VLA), solo como parámetros o variables automáticas.
+void matmul(int n,int k,int m,
+    int const A[n][k], int const B[k][m], int R[k][m]);
+// Esta forma es equivalente
+void matmul(int n, int k, int m,
+    int const (*A)[k], int const (*B)[m], int (*R)[m])
+{
+    for (int fila=0;fila<n;++fila){
+        for (int col=0;col<n;++col){
+            R[fila][col] = 0;
+            for (i=0;i<k;++i){
+                R[fila][col] += A[fila][k]*B[k][col];
+            }
+        }
+    }
 }
 ```
 
 ---
 
-```{.c}
-// Las dos declaraciones son equivalentes
-uint32_t suma(int n, int numeros[]);
-uint32_t suma(int n, int *numeros);
+:::{.callout-caution}
+Los punteros se pueden indexar como si fuesen arreglos, sin embargo **no son arreglos**.  
+Si un puntero `P` apunta a un arreglo `A` entonces:
 
-int f1(int argc,char *argv[])
+**Similitudes**  
+`P` (valor del puntero) es igual a `A` (dirección del arreglo)  
+`P[n]` es equivalente a `A[n]` (tanto para leer como modificar)  
+`&P[n]` es igual a `&A[n]`
+
+**Diferencias**  
+`&P` es la dirección en memoria del puntero (`&P != A`).  
+`&A` es la dirección en memoria del arreglo (`&A == &A`).  
+`sizeof P` (tamaño en memoria de P) siempre es el tamaño de un puntero.  
+`sizeof A` (tamaño en memoria de A) es el espacio ocupado por A en memoria.  
+`A` es la **dirección** del arreglo y por lo tanto no puede modificarse.  
+`P` es el **valor** del puntero y sí puede modificarse.
+:::
+
+---
+
+```{.c filename="Punteros no son arreglos"}
+#include <stdio.h>  // puts
+#include <assert.h> // assert
+// assert(x) termina el programa con mensaje de error si x es falso
+int main(void)
+{
+    int A[]={1,2,3,4,5,6,7,8,9,10,11,12};
+    int *B = A;
+    assert(A == B);
+    for (int i=0;i<(sizeof A / sizeof A[0]);++i){
+        assert(A[i] == B[i]);
+        assert(&A[i] == &B[i]);
+    }
+    assert(&A != &B);
+    assert(sizeof A != sizeof B);
+    puts("Todas las pruebas pasadas!\n");
+    return 0;
+}
 ```
+
+:::{.callout-note}
+Puedes ejecutar una versión de este ejemplo [aquí](https://onlinegdb.com/bJpZAEn_w).
+:::
+
+---
 
 ## Punteros
 
@@ -962,4 +1064,130 @@ Notar en el ejemplo la diferencia entre x e y. La variable x almacena cuatro pun
 La variable x contiene 4 punteros, por tanto su tamaño en memoria es el cuádruple de la variable y.
 :::
 
+## Interpretando declaraciones complejas
+
+Para interpretar una declaración compleja comenzar por el *identificador* (nombre de lo que se está declarando) considerar primero lo que hay a su derecha, luego lo que hay a su izquierda. Cada vez que se resuelva una declaración entre paréntesis considerar nuevamente derecha, luego izquierda.
+
+Al evaluar cada parámetro de una decalración de función se procede de la misma manera.
+
 ---
+
+```{.c}
+int const *A(int,int);
+```
+
+:::{.callout}
+Identificador: `A` → *`A` es...*  
+Derecha: `(int,int)` →  *...una función con dos parámetros enteros...*  
+Izquierda: `*` → *...que retorna un puntero a...*  
+Izquierda: `int const` → *...entero con signo de solo lectura.*
+:::
+
+:::{.callout-tip}
+Los calificadores `const` y `volatile` pueden ir a izquierda o derecha de un tipo base.  
+Pero **si califican un puntero deben ir siempre a la derecha del asterisco**.
+
+Si siempre se ponen a la derecha de lo que califican es más dificil confundirse.
+:::
+
+---
+
+```{.c}
+int const (*B(int,int))[9][3];
+```
+
+:::{.callout}
+Identificador: `B` → *`B` es...*   
+Derecha: `(int,int)` → *...una función con dos argumentos enteros...*  
+Izquierda: `*` → *...que retorna un puntero a...*  
+Fuera de los paréntesis:  
+Derecha: `[9]` → *...un arreglo de nueve...*    
+Continuando derecha `[3]` → *...arreglos de tres...*  
+Izquierda: `int` → *...enteros con signo.*
+:::
+
+---
+
+```{.c}
+void (* const ivecs[16])(void) = {fn0,..,fn15};
+```
+
+:::{.callout}
+Identificador: `ivecs` → *`ivecs` es...*  
+Derecha: `[16]` → *...un arreglo de dieciseis...*  
+Izquieda: `* const` → *...punteros constantes a...*  
+Fuera de los paréntesis:  
+Derecha: `(void)` → *...funciones que no aceptan argumentos...*  
+Izquieda: `void` → *...y no retornan valor.*
+:::
+
+:::{.callout-important}
+Las variables de solo lectura (de tipo calificado por `const`) deben ser inicializadas en su definición (declaración que reserva la memoria).
+:::
+
+:::{.callout-tip}
+En "`int const *A;`" la variable `A` no es calificada por `const`, sino la posición de memoria a la que apunta. Por eso no hace falta inicializarla al definir.
+:::
+
+---
+
+```{.c}
+void (*const suma)(Vector const *self,const Vector *otro, Vector *resultado) = misuma;
+```
+
+:::{.callout}
+Identificador: `suma` → *`suma` es...*  
+Izquierda: `*const` → *...un puntero constante a...*  
+Fuera de los paréntesis:  
+Derecha: `(Vector const *self,const Vector *otro, Vector *resultado)`  
+→ *...función que acepta tres argumentos: dos punteros a constante tipo Vector (self y otro) y un puntero a tipo Vector (resultado); ...*   
+Izquierda: `void` → *...y no retorna valor.*
+:::
+
+:::{.callout-important}
+Como `suma` es un tipo ***calificado constante***, debe ser inicializada al momento de su declaración.
+:::
+
+---
+
+```{.c}
+struct Pin_VT{
+    void (*const modo_salida)(Pin *);
+    void (*const modo_entrada)(Pin *);
+    void (*const set_estado)(Pin *,bool);
+    bool (*const get_estado)(Pin *);
+    bool (*const get_entrada)(Pin *);
+};
+```
+
+:::{.callout}
+No hay identificador → *No declara ningún objeto, ...*  
+Izquierda: `struct Pin_VT{...}` → *...pero define una estructura de etiqueta `Pin_VT` cuyos miembros son: `modo_salida` y `modo_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y no retorna valor; `set_estado`, un puntero constante a función que acepta un argumento puntero a `Pin`, un argumento tipo `bool` y no retorna valor; `get_estado` y `get_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y retorna un valor tipo `bool`.* 
+:::
+
+---
+
+```{.c}
+typedef enum {
+    PIN_IN_ANALOGICO = 0b0000,
+    PIN_IN_FLOTANTE  = 0b0100,
+    PIN_IN_CON_PULL  = 0b1000,
+    PIN_OUT_LENTO    = 0b0010,
+    PIN_OUT_MEDIO    = 0b0001,
+    PIN_OUT_RAPIDO   = 0b0011,
+    PIN_OUT_OD_LENTO = 0b0110,
+    PIN_OUT_OD_MEDIO = 0b0101,
+    PIN_OUT_OD_RAPIDO= 0b0111,
+    PIN_AFO_LENTO    = 0b1010,
+    PIN_AFO_MEDIO    = 0b1001,
+    PIN_AFO_RAPIDO   = 0b1011,
+    PIN_AFO_OD_LENTO = 0b1110,
+    PIN_AFO_OD_MEDIO = 0b1101,
+    PIN_AFO_OD_RAPIDO= 0b1111
+} ModoEntrada;
+```
+
+:::{.callout}
+Identificador `ModoEntada` → *`ModoEntrada` es...*  
+Izquierda: `typedef enum {...}` → *un tipo definido por el usuario, equivalente a la enumeración anónima especificada (además, se definen las correspondientes constantes).*
+:::
