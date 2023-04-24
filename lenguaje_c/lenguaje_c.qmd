@@ -18,18 +18,23 @@ Sumar un arreglo de enteros con signo de 32 bit usando aritmética con signo de 
 
 ## En lenguaje C
 
-```{.C code-line-numbers="1-10|3-4,9-10|5|6,8|7"}
-#include <stdint.h>
-
+```{.C code-line-numbers="1-11|3-4,10-11|5|6,9|8"}
+#include <stdint.h>// int32_t, int64_t
+// Definición de función
 int64_t sumatoria(int32_t N,const int32_t *b )
-{
-    int64_t A=0;
-    for (int i=0;i<N;++i){
-        A += b[i];
+{ // Bloque de código o sentencia compuesta
+    int64_t A=0; // Declaración e inicialización
+    for (int i=0;i<N;++i)  // sentencia de iteración
+    { // Bloque
+        A += b[i]; // asignación compuesta, indexado de arreglo
     }
     return A;
-}
+}// delimitado por corchetes {...}
 ```
+
+:::{.callout-important}
+El lenguaje C distingue mayúsculas y minúsculas.
+:::
 
 ## En código ensamblador ARMv7-M
 
@@ -262,6 +267,186 @@ int main(void)
     return 0;
 }
 ```
+
+## Sentencias
+
+
+:::{.callout}
+Son uno de los componentes, junto con las declaraciones, de todo programa en lenguaje C. Existen varias clases.
+
+- **Sentencias compuestas:** (llamadas **bloques de código** o **bloques**). Son secuencias de cero o más declaraciones y sentencias encerradas entre corchetes `{ }`.
+- **Sentencias de expresión:** Consisten en una expresíon seguida de un punto y coma `;`. La mayor parte de las sentencias en C son sentencias de expresión. Un punto y coma solo, sin expresión, es una sentencia nula.
+- **Sentencias de selección:** Permiten ejecutar distintas sentencias en forma condicional. `if`, `if-else`, `switch`
+- **Sentencias de iteración:** Permiten ejecutar repetidamente una sentencia. `while`, `do-while`,`for`
+- **Sentencias de salto:** Permiten cambiar el flujo de ejecución en forma incondicional `return`, `break`, `continue`, `goto`
+:::
+
+---
+
+```{.c filename="Ejemplo"}
+#include <stdio.h>
+int main(void)
+{ // bloque
+    int N,D,Q,R; // declaración (no es una sentencia)
+    puts("Ingrese numerador: "); // sentencia de expresión
+    scanf("%d",&N);
+    puts("Ingrese denominador: ");
+    scanf("%d",&D);
+    /*  Condición. Es un expresión. Si su valor es verdadero
+        se ejecuta el bloque if, sinó el bloque else.
+        ↓                                                  */
+    if (D==0) {
+        puts("División por cero!\n"); // D==0 es verdadero
+    }
+    else { // D==0 es falso (D distinto de cero)
+        Q = N/D; // asignación, cociente
+        R = N%D; // asignación, módulo
+        printf("Cociente %d, Resto %d",Q,R); // llamado a función
+    }
+    return 0; //Sentencia de salto, retorna con valor 0.
+}
+```
+
+---
+
+```{.c filename="Selección case"}
+typedef enum {X_NULO,X_ENCENDER,X_APAGAR,X_CONMUTAR} Evento;
+typedef enum {E_APAGADO, E_ENCENDIDO} Estado;
+Estado transicion(Estado const estado,Evento const evento){
+    Estado nuevo;
+    /*       Expresión que debe producir un valor entero.
+             Se evalúa solo una vez. Luego salta a la etiqueta
+             case cuyo valor coincide con el resultado o a la
+             etiqueta default si ninguno coincide.
+              │
+              ↓                                              */
+    switch(estado){
+    case E_APAGADO:
+        // Sentencia switch anidada
+        switch(evento){
+        // Las etiquetas valen solo en el bloque
+        // donde están definidas. Si no hay una
+        // sentencia break la ejecución continúa
+        // en las etiquetas siguientes.
+        case X_ENCENDER: // estas dos etiquetas corresponden a la misma sentencia.
+        case X_CONMUTAR: // Una sentencia puede tener varias etiquetas.
+            nuevo = E_ENCENDIDO;
+        break; // Sale del switch. SI SE OMITE CONTINÚA EN EL SIGUIENTE case
+        case X_APAGAR:
+        default:
+            nuevo = estado;
+        }
+    break;
+    case E_ENCENDIDO:
+        switch(evento){
+        case X_APAGAR:
+        case X_CONMUTAR:
+            nuevo = E_APAGADO;
+        break;
+        case C_ENCENDER;
+        default:
+            nuevo = estado;
+        }
+    break;
+    default:
+        nuevo = E_APAGADO;
+    }
+    return nuevo;
+}
+```
+
+:::{.callout}
+Switch evalúa la expresión de selección una sola vez, luego salta según su valor. En esos casos es más claro que sentencias `if-else` anidadas. No olvidar el `break` al final de cada `case`.
+:::
+
+---
+
+```{.c filename="Iteración for"}
+int producto_punto(int n, int const *v1,int const *v2){
+    int a = 0;
+/*    Inicialización. Opcional. Permite declarar variables.
+         │
+         │      Condición evaluada antes de cada ejecución
+         │      del bloque. Si su resultado es verdadero el
+         │      bloque es ejecutado. Opcional. Si se omite
+         │      genera un lazo infinito.
+         │       │
+         │       │  Expresión de incremento, ejecutada 
+         │       │  luego de cada ejecución del bloque y
+         │       │  antes de comprobar la condición para la
+         │       │  siguiente ejecución. Opcional.
+         ↓       ↓   ↓                                   */
+    for(int k=0;k<n;++k){ // bloque
+        a += v1[k]*v2[k];
+    }
+    return a;
+}
+```
+:::{.callout-tip}
+La sentencia `for (;;) {...}` produce un lazo infinito.
+:::
+
+---
+
+![Lazo `for` destacado en rojo.](producto_punto.png)
+
+---
+
+```{.c filename="rcuad.h"}
+#ifndef RCUAD_H
+#define RCUAD_H
+#include <stdbool.h> // bool, true, false
+typedef struct Opt_float{
+    bool es_float;
+    float valor;
+} Opt_float;
+Opt_float raiz_cuadrada(float num);
+#endif
+
+```
+
+```{.c filename="rcuad.c"}
+// Ejemplo iteración while
+#include "rcuad.h"
+static float error_abs(float ref,float val){
+    float const err = ref - val;
+    if (err<0) return -err;
+    return err;
+}
+Opt_float raiz_cuadrada(float num){
+    float tol = num*1e-6, r = 1,err;
+    if (num < 0) return  (Opt_float){false};
+    if (num == 0) return (Opt_float){true,0};
+    while(error_abs(num,r*r) > tol){
+        r = (num/r+r)/2;
+    }
+    return (Opt_float){true,r};
+}
+```
+
+---
+
+```{.c filename="main.c"}
+// Ejemplo de do-while
+#include <stdio.h>
+#include "rcuad.h"
+int main(void){
+    Opt_float r;
+    do{
+        float x;
+        printf("Ingrese un número no negativo o -1 para terminar: ");
+        scanf("%f",&x);
+        r=raiz_cuadrada(x);
+        if (r.es_float)
+            printf("La raíz cuadrada de %g es %g.\n",x,r.valor);
+    }while(r.es_float);
+    return 0;
+}
+```
+
+:::{.callout-tip}
+`do-while` ejecuta el bloque de código **al menos una vez**, mientras que `while` solo lo ejecuta si se cumple la condición.
+:::
 
 ## Declaraciónes
 
@@ -652,13 +837,13 @@ typedef struct Estructura Estructura;
 Estructura var3;
 // Equivalente
 struct Estructura var4;
-
  int main(void){
     var2 = &var1;
     // Acceso a miembros de estructura
     var1.miembro_1 = 5;
     var1.miembro_2.parte_1 = 4;
     // Acceso a miembros desde puntero a estructura
+    var2->miembro_2.parte_2 = 3;
     var2->miembro_3[5]=4;
     // Forma equivalente (pero no usada). LOS PARÉNTESIS SON NECESARIOS
     (*var2).miembro_3[6]=5;
