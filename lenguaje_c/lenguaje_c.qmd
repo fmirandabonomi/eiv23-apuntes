@@ -1376,3 +1376,58 @@ typedef enum {
 Identificador `ModoEntada` → *`ModoEntrada` es...*  
 Izquierda: `typedef enum {...}` → *un tipo definido por el usuario, equivalente a la enumeración anónima especificada (además, se definen las correspondientes constantes).*
 :::
+
+## Inicializadores de arreglos y estructuras
+
+```{.c filename="Inicializadores"}
+typedef struct MiStruct {int a;int b;int c;} MiStruct;
+typedef union MiUnion {char b[4];short h[2];long w;} MiUnion;
+// Lista de inicialización
+int arreglo_1[] = {1,2,3,4};  // Toma la dimensión de la lista
+int arreglo_2[8] = {1,2,3,4}; // Los miembros no especificados se inicializan en 0
+int arreglo_3[][3] = {{1,2},{1,3,4}}; // Solo puede omitirse la primera dimensión
+char arreglo4[] = "ABC"; // equivale a {'A','B','C','0'}
+MiStruct estructura_1 = {3,5,7}; // a=3, b=5, c=7
+MiStruct estructura_2 = {1};     // a=1, b=0, c=0
+MiUnion  union_1 = {{1,2,3,4}};  // En una unión solo puede inicializarse así el primer miembro
+// Inicializador con designación
+// inicializa {3,4,0,0,0,23,24,0,-4,0,0,0,0,0,0}
+int arreglo_5[15] = {[5]=23,24,[8]=-4,[0]=3,4};
+// inicializa {{0,0},{1,2},{0,0}}
+int arreglo_6[3][2] = {[1]={1,2}};
+// inicializa {{1,0},{0,0},{0,2}}
+int arreglo_7[3][2] = {[0][0]=1,[2][1]=2};
+MiStruct estructura_3 = {.b=3,.a=-2}; // a=-2, b=3, c=0
+// Única manera de inicializar un miembro de una union que no sea el primero
+// w es -7
+MiUnion union_2 = {.w=-7};
+// h es {0,4}
+MiUnion union_3 = {.h[1]=4};
+// b es {0,0,5,7}
+MiUnion union_4 = {.b={[2]=5,7}};
+```
+
+## Literales compuestos
+
+Los literales compuestos crean **constantes** de tipo estructura, unión o arreglo. Para crearlos se especifica el tipo entre paréntesis y se ubica a continuación un inicializador con designación.
+
+```{.c}
+#include <assert.h>
+typedef struct {char nombre[20];char apellido[20];int edad;} Ficha;
+int posicion_maximo(int n,int const *b);
+void muestra_ficha(Ficha const *ficha);
+int main(void){
+    int i;
+    i = posicion_maximo(8,(int[8]){[3]=5,6,4});
+    assert(4 == i);
+    // Puede tomarse la dirección de la constante
+    // Esa dirección es de solo lectura.
+    muestra_ficha(&(Ficha){
+        .nombre = "Juan", // {'J','u','a','n',0,..,0}
+        .apellido = "Perez",
+        .edad = 20});
+}
+```
+
+## Expresiones
+
