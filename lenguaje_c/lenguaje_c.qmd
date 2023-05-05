@@ -1409,25 +1409,62 @@ MiUnion union_4 = {.b={[2]=5,7}};
 
 ## Literales compuestos
 
-Los literales compuestos crean **constantes** de tipo estructura, unión o arreglo. Para crearlos se especifica el tipo entre paréntesis y se ubica a continuación un inicializador con designación.
+Los literales compuestos crean objetos de tipo estructura, unión o arreglo. Para crearlos se especifica el tipo entre paréntesis y se ubica a continuación un inicializador con designación.
+
+:::{.callout-warning}
+Los objetos creados por los literales compuestos **solo son válidos en el ámbito donde fueron creados**. Corresponden a variables automáticas anónimas si fueron creados dentro de un bloque de código y variables static si fueron creados en el ámbito de archivo (fuera de una función).
+En particular no se debe retornar nunca la dirección de un objeto automático (variable local), pues la memoria es liberada al salir del bloque donde fue reservada.
+Lo que sí se puede retornar es **el valor** de un literal compuesto tipo estructura o unión.
+:::
+
+----
 
 ```{.c}
 #include <assert.h>
 typedef struct {char nombre[20];char apellido[20];int edad;} Ficha;
 int posicion_maximo(int n,int const *b);
+// Muestra la ficha por pantalla. La dirección de memoria pasada
+// no es almacenada de forma permanente en ningún lugar.
 void muestra_ficha(Ficha const *ficha);
-int main(void){
+typedef struct Vec2D {int x;int y;} Vec2D;
+Vec2D ejemplo(void){
     int i;
+    // Equivale a crear una variable local tipo arreglo a 8 enteros, inicializada con {[3]=5,6,4} 
+    // y pasarla como parámetro a posicion_maximo
     i = posicion_maximo(8,(int[8]){[3]=5,6,4});
     assert(4 == i);
-    // Puede tomarse la dirección de la constante
-    // Esa dirección es de solo lectura.
-    muestra_ficha(&(Ficha){
-        .nombre = "Juan", // {'J','u','a','n',0,..,0}
+    // Equivale a crear una variable local de solo lectura de tipo Ficha, inicializada con el
+    // inicializador designado {...}, y pasar su dirección como argumento a muestra_ficha.
+    // NOTA: La dirección de memoria se volverá inválida al salir de main (pues la memoria es liberada)
+    // Por lo tanto, muestra_ficha *NO PUEDE ALMACENAR EN NINGUN LADO LA DIRECCION DE MEMORIA PASADA*
+    // Esta acción es, por lo tanto, INSEGURA. Si muestra_ficha guardara la dirección por ejemplo en una
+    // variable estáticoa, eso sería un puntero inválido (llamado dangling pointer)
+    muestra_ficha(&(Ficha const){
+        .nombre = "Juan",
         .apellido = "Perez",
         .edad = 20});
+    // Equivale a crear una variable Vec2D local y
+    // retornar su VALOR. Es por lo tanto correcto (no
+    // retorna la dirección de memoria sino el valor).
+    // Se sugiere usar esto solo cuando es absolutamente
+    // claro.
+    return (Vec2D){5,3};
 }
 ```
 
 ## Expresiones
+
+De la misma forma que en matemática, en C una expresión es una secuencia de operadores y operandos que indica un cómputo. Ahora bien, en C las operaciones pueden tener efectos secundarios y produce un valor que tiene un tipo y pertenece a una categoría de valor.
+
+---
+
+:::{.callout-note}
+Las categorías de valor son:
+
+- Objetos en memoria, llamados `lvalue` (viene de *left value*, valor izquierdo, por razones históricas). Pueden ser de solo lectura o modificables (usando operadores de asignación, asignación compuesta o incremento).
+- Valores (llamados `rvalue`), son los valores suceptibles de almacenarse en memoria (en un `lvalue` modificable, mediante operador de asignación), pasarse como argumentos, usarse para efectuar una decisión en una estructura de control o descartarse. Un caso especial de rvalue es el de tipo `void`, que significa que no hay un valor (y no puede hacerse de el ningún uso salvo descartarlo).
+- Designadores de función. A esta categoría pertenece un identificador que designa una función.
+:::
+
+## Operadores y precedencia
 
