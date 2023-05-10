@@ -1466,5 +1466,200 @@ Las categorías de valor son:
 - Designadores de función. A esta categoría pertenece un identificador que designa una función.
 :::
 
-## Operadores y precedencia
+## Paréntesis de agrupamiento
 
+Las expresiones entre paréntesis son evaluadas en primer lugar. Los paréntesis de agrupamiento pueden identificarse pues ocupan el lugar que ocuparía un operando (un número, por ejemplo). Usar paréntesis explícitos siempre que no sea absolutamente claro el orden de operaciones.
+
+```{.c filename="Ejemplo"}
+int main(void){
+    return (3+7)*(8-4)+(1 << (3+2));
+}
+```
+
+## Operadores unarios
+
+Los operadores unarios tienen un solo operando. Pueden ubicarse a la derecha del operando (sufijos) o a su izquierda (prefijos).
+
+```{.c filename="Ejemplo"}
+int f1(int a,int b){
+    // '-' en este contexto es el
+    // operador unario prefijo
+    // negativo (complemento a 2)
+    return -a * -b;
+}
+typedef struct Pila{
+    int mem[128];
+    int sp;
+}Pila;
+void push(int valor,Pila * pila){
+    assert(pila->sp>0);
+    // '--' es el operador unario
+    // Post-incremento
+    pila->mem[pila->sp--]=valor;    
+}
+```
+
+## Operadores binarios
+
+Los operadores binarios se ubican en medio de sus operandos.
+
+```{.c filename="Ejemplo"}
+struct s1{int a,int b};
+int suma(struct s1 args){
+    // '.' es el operador binario
+    // acceso a miembro.
+    // '+' es el operador binario
+    // suma.
+    return args.a+args.b;
+}
+```
+
+## Precedencia
+
+La precedencia indica el orden en el que se realizan las operaciones, por ejemplo el producto se realiza antes de la suma. En C hay 15 niveles de precedencia.
+
+:::{.callout-caution}
+Algunas reglas de precedencia de C se prestan a confusión. En esos casos es **muy recomendable** usar paréntesis para indicar explícitamente el orden de operaciones.
+:::
+
+## Asociatividad
+
+La asociatividad indica como se procesan varios operadores de la misma precedencia. Puede ser izquierda a derecha o derecha a izquierda.
+
+:::{.callout-caution}
+La asociatividad puede a veces no ser intuitiva. Se recomienda usar paréntesis para indicar el orden de operación siempre que no sea inmediatamente claro.
+:::
+
+---
+
+### Izquierda a derecha
+
+Si hay tres o más operandos, se procesan primero las operaciones a la izquierda.
+
+```{.c}
+#include <stdio.h>
+#include <assert.h>
+int main(void){
+    int a,b;
+    a = 7*2/3*5;
+    // equivale a 
+    b = ((7*2)/3)*5;
+    assert(a == b);
+    puts("No falla\n");
+    return 0;
+}
+``` 
+
+----
+
+### Derecha a izquierda
+
+Si hay tres o más operandos, se procesan primero las operaciones a la derecha.
+
+```{.c}
+#include <stdio.h>
+#include <assert.h>
+int main(void){
+    int a1=8,b1,c1;
+    int a2=8,b2,c2;
+    c1=a1+=b1=5;
+    c2=(a2+=(b2=5));
+    assert((a1==a2)&&(b1==b2)&&(c1==c2));
+    printf("a: %d, b: %d, c: %d\n",a1,b1,c1); // a: 13, b: 5, c: 13
+    return 0;
+}
+```
+
+## Operadores de precedencia 1
+
+Son los operadores de post-incremento, post-decremento, llamado a función, direccionamiento de arreglo, acceso a miembro, acceso a miembro por puntero y literal compuesto. Se ejecutan antes que cualquier otro operador (excepto agrupación con paréntesis).
+
+:::{.callout-note}
+La asociatividad de estos operadores es de ***izquierda a derecha***.
+:::
+
+----
+
+```{.c}
+#include <stdio.h>
+#include <assert.h>
+
+typedef struct Nodo Nodo;
+struct Nodo {
+    int valor;
+    Nodo *izq;
+    Nodo *der;
+};
+int main(void){
+    int x=0,y=3,u,v;
+    Nodo nodos[4]={0}, *pnodo;
+    // Post incremento/post decremento
+    u = x++;
+    v = y--;
+    // Llamado a función
+    printf("x: %d, y: %d, u: %d, v: %d",x,y,u,v);
+    assert((x == 1) && (y == 2) && (u == 0) && (v == 3));
+    // Indexado, literal compuesto
+    nodos[0]=(Nodo){.valor=x};
+    nodos[1]=(Nodo){.valor=y};
+    // Indexado, acceso a miembro
+    nodos[2].valor=u;
+    nodos[3].valor=v;
+    pnodo = &nodos[3];
+    // Acceso a miembro por puntero
+    pnodo->izq = &nodos[0];
+    pnodo->izq->izq = &nodos[2];
+    pnodo->izq->der = &nodos[1];
+    assert(pnodo->izq->valor < pnodo->valor);
+    assert(pnodo->izq->izq->valor < pnodo->izq->valor);
+    assert(pnodo->izq->valor < pnodo->izq->der->valor);
+    return 0;
+}
+```
+
+## Operadores de precedencia 2
+
+Son operadores de pre-incremento, pre-decremento, signos positivo y negativo, NOT booleano, NOT bit a bit, conversión de tipo, indirección (acceso al destino de un puntero), dirección (dirección de memoria de un objeto) y sizeof (tamaño de un objeto).
+
+:::{.callout-note}
+La asociatividad de estos operadores es de ***derecha a izquierda***.
+:::
+
+---
+
+```{.c}
+#include <assert.h>
+#include <stdint.h>
+int main(void){
+    int x=0,y=3,u,v;
+    int a,b,c;
+    uint16_t d;
+    int *p1, *p2, **p3;
+    // Pre incremento/post decremento
+    u = ++x;
+    v = --y;
+    assert((u == x) && (v == y));
+    // Positivo y negativo
+    // NOTAR LOS ESPACIOS...
+    a = - - 3;
+    b = + - 3;
+    assert(a == -b);
+    // NO lógico (booleano)
+    c = !!4;
+    assert(c == 1);
+    // No bit a bit, conversión de tipo
+    d = (uint16_t)~0xF00FU;
+    assert(d == (uint16_t)0x0FF0U);
+    // operador dirección de...
+    p1 = &a;
+    p2 = &b;
+    // operador indirección (contenido de...)
+    *p1 = -9;
+    assert((a == -9) && (*p2 == -3));
+    // operador sizeof (tamaño de)
+    assert(sizeof d == 2 );
+    p3 = &p2;
+    assert(**p3 == -3);
+    return 0;
+}
+```
