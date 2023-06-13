@@ -3,7 +3,7 @@
     title: "Lenguaje C"
     date: last-modified
     date-format: iso
-    format: revealjs
+    format: pptx 
     lang: es
     bibliography: bibliografia.bib
 ---
@@ -1573,6 +1573,9 @@ int main(void){
 ## Operadores de precedencia 1
 
 Son los operadores de post-incremento, post-decremento, llamado a función, direccionamiento de arreglo, acceso a miembro, acceso a miembro por puntero y literal compuesto. Se ejecutan antes que cualquier otro operador (excepto agrupación con paréntesis).
+
+### 
+
 
 :::{.callout-note}
 La asociatividad de estos operadores es de ***izquierda a derecha***.
