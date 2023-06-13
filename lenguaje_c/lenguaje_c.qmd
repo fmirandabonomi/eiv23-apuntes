@@ -3,7 +3,8 @@
     title: "Lenguaje C"
     date: last-modified
     date-format: iso
-    format: pptx 
+    format: pdf
+    monofont: Hack
     lang: es
     bibliography: bibliografia.bib
 ---
