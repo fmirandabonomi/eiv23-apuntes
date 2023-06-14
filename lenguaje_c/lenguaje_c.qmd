@@ -267,20 +267,20 @@ int main(void){
 ```
 ```{.c #lst-ejemplo-macros-expansion lst-cap="Macros expandidas (lineas quebradas para que el código entre en el espacio)" code-line-numbers="false"}
 int main(void){
-  ((RCC_TypeDef *)((0x40000000UL + 0x00020000UL) + 0x00001000UL))->APB2ENR |= 
+  ((RCC_TypeDef *)((0x40000000UL + 0x00020000UL) + 0x00001000UL))->APB2ENR |=  ↩
   (0x1UL << (4U));
-  (((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL))->CRH) =  
-  ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL))->CRH) & 
+  (((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL))->CRH) =    ↩
+  ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL))->CRH) &   ↩
   (0xF << OFFSET_CR_LED)) 
           | (0b0010 << ((13 * 4) % 32));
   for(;;){
-    ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL)))->BSRR = 
+    ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL)))->BSRR =↩
     1 << (13));
-    do{ for (uint32_t i = (500); i>0; --i){ for (uint32_t volatile j=0;
+    do{ for (uint32_t i = (500); i>0; --i){ for (uint32_t volatile j=0;        ↩
     j<(8000000/(1000*13));++j); }}while(0);
-    ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL)))->BRR = 
+    ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL)))->BRR = ↩
     1 << (13));
-    do{ for (uint32_t i = (50*10); i>0; --i){ for (uint32_t volatile j=0;
+    do{ for (uint32_t i = (50*10); i>0; --i){ for (uint32_t volatile j=0;      ↩
     j<(8000000/(1000*13));++j); }}while(0);
   }
 }
