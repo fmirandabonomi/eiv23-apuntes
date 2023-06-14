@@ -1,451 +1,559 @@
 ---
-    author: "Ferando Alberto Miranda Bonomi"
-    title: "Lenguaje C"
-    date: last-modified
-    date-format: iso
-    format: pdf
-    monofont: Hack
-    lang: es
-    bibliography: bibliografia.bib
+  author: "Ferando Alberto Miranda Bonomi"
+  title: "Lenguaje C"
+  date: last-modified
+  date-format: iso
+  format: pdf
+  monofont: Hack
+  lang: es
+  number-sections: true
+  code-line-numbers: true
+  bibliography: bibliografia.bib
 ---
 
-## Lenguaje de programación
+## Lenguaje de programación {#sec-lenguaje-de-programacion}
 
 Es un lenguaje formal que permite codificar procesos de cómputo o algoritmos de manera que puedan ser ejecutados por una computadora.
 
-## Ejemplo
+### Un ejemplo {#sec-exm-sumatoria}
 
-Sumar un arreglo de enteros con signo de 32 bit usando aritmética con signo de 64 bit.
+Como ejemplo veremos la implementación en lenguaje C y ensamblador de un algoritmo simple con la siguiente especificación:
 
-## En lenguaje C
+::: {#exm-sumatoria}
+Implementar una función que permita *sumar un arreglo de enteros con signo de 32 bit usando aritmética con signo de 64 bit y produciendo un resultado de 64 bit*.
+:::
 
-```{.C code-line-numbers="1-11|3-4,10-11|5|6,9|8"}
-#include <stdint.h>// int32_t, int64_t
-// Definición de función
-int64_t sumatoria(int32_t N,const int32_t *b )
-{ // Bloque de código o sentencia compuesta
-    int64_t A=0; // Declaración e inicialización
-    for (int i=0;i<N;++i)  // sentencia de iteración
-    { // Bloque
-        A += b[i]; // asignación compuesta, indexado de arreglo
-    }
-    return A;
-}// delimitado por corchetes {...}
+El @lst-sumatoria-h es un encabezado en lenguaje C que describe la función sumatoria que implementa la solución. Tanto la implementación en C como ensamblador respetarán esta interfaz. (ver @sec-encabezados)
+
+El @lst-sumatoria-main presenta un programa en C que *prueba la solución*. Este código define un arreglo de números a sumar (líneas 5 y 6). Calcula la suma usando la función sumatoria especificada en el @exm-sumatoria (línea 8). Comprueba que el resultado obtenido sea el correcto (línea 10). Presenta en pantalla el resultado (línea 12) y termina el programa retornando el código `0` al sistema operativo (que indica que terminó correctamente). Si el resultado no fuera el esperado `assert` termina la ejecución del programa indicando un error.
+
+:::{.callout appearance="minimal"}
+``` {.c #lst-sumatoria-h lst-cap="sumatoria.h"}
+#ifndef SUMATORIA_H /* Compilación condicional para impedir*/
+#define SUMATORIA_H /* doble inclusión del contenido*/
+#include <stdint.h> /* Este encabezado estandar define intxx_t*/
+/* Declaración de la función */
+int64_t sumatoria(int32_t cantidadDeNumeros, int32_t const numeros[]);
+#endif
+
 ```
 
-:::{.callout-important}
+``` {.c #lst-sumatoria-main lst-cap="main.c"}
+#include <assert.h>    /* assert */
+#include <stdio.h>     /* printf */
+#include <sumatoria.h> /* sumatoria */
+int main(void){
+  static int32_t const numeros[] = {0x7F00AA00,1983,775,0x45678901};
+  static unsigned const cantidadDeNumeros = sizeof(numeros)/sizeof(numeros[0]);
+  /* Calcula la suma */
+  int64_t const suma = sumatoria(cantidadDeNumeros,numeros);
+  /* Comprueba que el resultado sea el esperado */
+  assert(((int64_t)0x7F00AA00 + 1983 + 775 + 0x45678901) == suma);
+  /* Presenta el resultado en pantalla */
+  printf("La suma es %ld y coincide con lo esperado.\n",suma);
+}
+
+```
+:::
+
+::: callout-important
 El lenguaje C distingue mayúsculas y minúsculas.
 :::
 
-## En código ensamblador ARMv7-M
+#### Implementación en lenguaje C {#sec-exm-sumatoria-c}
 
-```{.asm code-line-numbers="1-18|1,14,18|6-7,16-17|2-5,8-9,12-13|9-11"}
+El @lst-sumatoria-c contiene la implementación en lenguaje C del @exm-sumatoria. La línea 1 incluye el encabezado del @lst-sumatoria-h, que declara la función sumatoria. En las líneas 2 a 9 se define o implementa la función sumatoria. El cuerpo de la función es el bloque de código que inicia con la llave en la línea 3 y termina con la llave en la línea 9. La línea 4 define la variable automática `acumulador` con un valor inicial de cero. Las líneas 5 a 7 contienen una estructura de repetición `for` que recorre el arreglo `numeros`, toma cada valor, convirtiéndolo de tipo `int32_t` a tipo `int64_t` (es una conversión implícita, ver @sec-promocion-enteros) y lo suma al valor de la variable `acumulador`, guardando el resultado en la misma variable `acumulador`. Finalmente la sentencia `return` de la línea 8 finaliza la función y retorna el valor de la variable `acumulador` como valor de la función.
+
+:::{.callout appearance="minimal"}
+``` {.c #lst-sumatoria-c lst-cap="sumatoria.c"}
+#include <sumatoria.h>
+int64_t sumatoria(int32_t const cantidadDeNumeros,
+                  int32_t const numeros[const]){
+  int64_t acumulador = 0;
+  for (int i=0;i < cantidadDeNumeros;++i){
+    acumulador += numeros[i];
+  }
+  return acumulador;
+}
+
+```
+:::
+
+#### Implementación en ensamblador ARMv7-M {#sec-exm-sumatoria-asm}
+
+El @lst-sumatoria-asm presenta la implementación del @exm-sumatoria en ensamblador ARMv7-M.
+
+:::{.callout appearance="minimal"}
+```{.asm #lst-sumatoria-asm lst-cap="sumatoria.s"}
+  .syntax unified
+  .thumb
+  .cpu cortex-m3
+  .fpu softvfp
+  .arch armv7-m
+
+  .section  .text.sumatoria,"ax",%progbits
+  .global  sumatoria
+  .type  sumatoria, %function
 sumatoria:
-    cmp     r0, #0
-    ble     .L4
-    subs    r2, r1, #4
-    add     ip, r2, r0, lsl #2
-    movs    r0, #0
-    mov     r1, r0
+  cmp  r0, #0
+  ble  .L4
+  movs  r2, #0
+  movs  r3, #0
+  subs  r1, r1, #4
+  push  {r4}
+  add  r4, r1, r0, lsl #2
 .L3:
-    ldr     r3, [r2, #4]!
-    adds    r0, r3, r0
-    adc     r1, r1, r3, asr #31
-    cmp     r2, ip
-    bne     .L3
-    bx      lr
+  ldr  r0, [r1, #4]!
+  adds  r2, r2, r0
+  adc  r3, r3, r0, asr #31
+  cmp  r1, r4
+  bne  .L3
+  mov  r0, r2
+  mov  r1, r3
+  pop  {r4}
+  bx  lr
 .L4:
-    movs    r0, #0
-    mov     r1, r0
-    bx      lr
+  movs  r2, #0
+  movs  r3, #0
+  mov  r0, r2
+  mov  r1, r3
+  bx  lr
+  .size  sumatoria, .-sumatoria
+
+```
+:::
+
+
+#### Código máquina {#sec-exm-sumatoria-machine-code}
+
+:::{.callout appearance="minimal"}
+``` {.hex #lst-sumatoria-dump lst-cap="Volcado de memoria del símbolo *sumatoria*" code-line-numbers="false"}
+  Offset: 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 	
+08000340: 00 28 10 DD 10 B4 04 39 01 EB 80 00 00 22 00 23   .(.Ý.´.9.ë...".#
+08000350: 51 F8 04 4F 12 19 43 EB E4 73 81 42 F8 D1 10 46   Qø.O..Cëäs.BøÑ.F
+08000360: 19 46 10 BC 70 47 00 22 00 23 10 46 19 46 70 47   .F.¼pG.".#.F.FpG
 ```
 
-## En código máquina ARMv7-M (comentado)
-
-```{.asm code-line-numbers="1-16|2,13,16|6-7,14-15|2-5,8,11-12|8-10"}
-08000c06 <sumatoria>:
- 8000c06:       2800            cmp     r0, #0
- 8000c08:       dd0c            ble.n   8000c24 <sumatoria+0x1e>
- 8000c0a:       1f0a            subs    r2, r1, #4
- 8000c0c:       eb02 0c80       add.w   ip, r2, r0, lsl #2
- 8000c10:       2000            movs    r0, #0
- 8000c12:       4601            mov     r1, r0
- 8000c14:       f852 3f04       ldr.w   r3, [r2, #4]!
- 8000c18:       1818            adds    r0, r3, r0
- 8000c1a:       eb41 71e3       adc.w   r1, r1, r3, asr #31
- 8000c1e:       4562            cmp     r2, ip
- 8000c20:       d1f8            bne.n   8000c14 <sumatoria+0xe>
- 8000c22:       4770            bx      lr
- 8000c24:       2000            movs    r0, #0
- 8000c26:       4601            mov     r1, r0
- 8000c28:       4770            bx      lr
- ```
-
-## En código máquina ARMv7-M (vista en memoria)
-
-```{.hex}
-  Offset: 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
-8000cc00:                   00 28 0C DD 0A 1F 02 EB 80 0C
-8000cc10: 00 20 01 46 52 F8 04 3F 18 18 41 EB E3 71 62 45
-8000cc20: F8 D1 70 47 00 20 01 46 70 47
+``` {.hex #lst-sumatoria-disassemble lst-cap="Desensamblado de *sumatoria*" code-line-numbers="false"}
+08000340 <sumatoria>:
+ 8000340:       2800            cmp     r0, #0
+ 8000342:       dd10            ble.n   8000366 <sumatoria+0x26>
+ 8000344:       b410            push    {r4}
+ 8000346:       3904            subs    r1, #4
+ 8000348:       eb01 0080       add.w   r0, r1, r0, lsl #2
+ 800034c:       2200            movs    r2, #0
+ 800034e:       2300            movs    r3, #0
+ 8000350:       f851 4f04       ldr.w   r4, [r1, #4]!
+ 8000354:       1912            adds    r2, r2, r4
+ 8000356:       eb43 73e4       adc.w   r3, r3, r4, asr #31
+ 800035a:       4281            cmp     r1, r0
+ 800035c:       d1f8            bne.n   8000350 <sumatoria+0x10>
+ 800035e:       4610            mov     r0, r2
+ 8000360:       4619            mov     r1, r3
+ 8000362:       bc10            pop     {r4}
+ 8000364:       4770            bx      lr
+ 8000366:       2200            movs    r2, #0
+ 8000368:       2300            movs    r3, #0
+ 800036a:       4610            mov     r0, r2
+ 800036c:       4619            mov     r1, r3
+ 800036e:       4770            bx      lr
 ```
 
-## El lenguaje C es... (1/2)
+:::
 
-De *alto nivel* : Codifica procesos en forma independiente del hardware donde se ejecutarán
+## El lenguaje de programación C {#sec-lenguaje-c}
 
-*Compilado* : El código fuente es traducido a código máquina antes de su ejecución
+El lenguaje C es un lenguaje de programación de alto nivel, compilado, imperativo, estructurado y procedimental.
 
-## El lenguaje C es... (2/2)
+-   Es un lenguaje de *alto nivel*, porque codifica procesos en forma independiente del hardware donde se ejecutarán.
+-   Es un lenguaje *compilado*, porque El código fuente es traducido a código máquina antes de su ejecución.
+-   Es un lenguaje *Imperativo*, el programa está escrito en forma de *sentencias* o instrucciones a ejecutar. Especifica *como hacer*.
+-   Es un lenguaje *Estructurado*, porque la secuencia en que se ejecutan las sentencias es determinada por estructuras de control: estructuras secuenciales (bloques de código), estructuras de selección (if, switch) y estructuras de repetición (while, do..while, for).
+-   *Procedimental*, el código está organizado en procedimientos o funciones.
 
-*Imperativo* : El programa está escrito en forma de *sentencias* o instrucciones a ejecutar. Especifica *como hacer*
+### El proceso de compilación en C {#sec-compilacion}
 
-*Estructurado* : La secuencia en que se ejecutan las sentencias es determinada por estructuras de control
+La @fig-compilacion presenta un esquema del proceso de compilación del lenguaje C. Es el proceso por el cual el código fuente escrito en un lenguaje compilado es convertido en código máquina ejecutable. El código fuente se encuentra distribuido en diversos archivos fuente de extensión `.c` y archivos de encabezado con extensión `.h`. Un archivo fuente junto con todos los encabezados incluidos en el mismo constituye una *unidad de traducción*. La compilación de una unidad de traducción da lugar a un archivo de *código objeto*, de extensión `.o`, que contienen código máquina donde las direcciones de memoria no son fijas sino definidas mediante variables denominadas símbolos. Los archivos objeto pueden consolidarse en archivos de librería de extensión `.a`, análogos a los archivos `.zip` pero especializados para organizar código objeto. El archivo ejecutable es creado organizando el código objeto y dando valores concretos a los símbolos mediante un proceso denominado enlazado. 
 
-*Procedimental* : Abstracción mediante procedimientos o funciones
+:::{.callout appearance="minimal"}
+![Proceso de compilación](proceso_compilacion.png){#fig-compilacion fig-align="center"}
+:::
 
-## Proceso de compilación
+### El Preprocesador {#sec-preprocesador}
 
-![](proceso_compilacion.png){fig-align="center"}
+Es un procesador de texto automático. Procesa los *comentarios* y las *directivas del preprocesador*, su salida es la entrada del compilador de C. En el @lst-parpadeo-c vemos un programa simple que parpadea el LED integrado en una placa de desarrollo. Vamos a usarlo para ilustrar algunas funciones del preprocesador.
 
-## Preprocesador
+Un comentario es todo texto entre `/*` y `*/` o entre `//` y el fin de línea. El preprocesador elimina los comentarios, reemplazándolos por un espacio en blanco. Podemos observar múltiples comentarios. En las líneas 4 y 10 hay comentarios que comienzan en `//`, que es un estilo de comentario originado en C++ y luego adoptado también por C. Los demás comentarios son delimitados por `/*` y `*/`, que es el estilo original de C. Estos comentarios pueden intercalarse en el código en cualquier parte donde pueda ponerse un espacio en blanco (ej. comentarios en líneas 12 y 14). Además pueden abarcar múltiples líneas (ej. comentario en líneas 5 a 7).
 
-Es un procesador de texto automático. Procesa los *comentarios* y las *directivas del preprocesador*.
+Las directivas del preprocesador comienzan con un caracter numeral (`#`), que debe ser el primer caracter de la línea y continúan hasta el final de línea. Pueden prolongarse en varias líneas escapando las nuevas líneas con el caracter barra invertida (`\`). En la línea 2 observamos la directiva `#include`, que inserta el contenido del archivo indicado (usualmente un archivo de encabezado, `.h`) en el punto donde se encuentra la directiva antes de continuar el procesamiento. La directiva `#define` en la línea 4 define una *macro del preprocesador* que sustituye la *palabra* "TIEMPO_MILISEGUNDOS" por "500".
 
-La salida del preprocesador es la entrada del compilador de C propiamente.
 
----
-
-Un comentario es todo texto entre `/*` y `*/` o entre `//` y el fin de línea. El preprocesador elimina los comentarios, reemplazándolos por un espacio en blanco.
-
-```{.c filename="main.c"}
+:::{.callout appearance="minimal"}
+```{.c #lst-parpadeo-c lst-cap="parpadeo.c"}
+/* Incluye el encabezado que declara todo lo que comienza por SP_ */
+#include <soporte_placa.h> 
+/* Define una macro del preprocesador */
+#define TIEMPO_MILISEGUNDOS 500 // comentario estilo C++
 /* Comentario de
  * varias líneas
  */
 int main(void)
 { /* un comentario */
-    bool estado=0; // otro comentario
-    Pin_initPuerto(PUERTO_LED);
-    Pin_salida(PUERTO_LED /*puerto*/ ,PIN_LED /*pin*/);
-    while(1){
-        Pin_escribe(PUERTO_LED,PIN_LED,estado);
-        espera(500);
-        estado = !estado;
-    }
-    return 0;
+  bool estado=0; // otro comentario
+  SP_init();
+  SP_Pin_setModo(SP_PIN_LED /*handle pin*/,SP_PIN_MODO_SALIDA /*modo*/);
+  while(1){
+    SP_Pin_write(SP_PIN_LED,estado /*valor*/ );
+    SP_Tiempo_delay(TIEMPO_MILISEGUNDOS);
+    estado = !estado;
+  }
+  return 0;
 }
 ```
+:::
 
----
 
-Las directivas del preprocesador comienzan con un caracter numeral (`#`), que debe ser el primer caracter de la línea y continúan hasta el final de línea. Pueden prolongarse en varias líneas escapando las nuevas líneas con el caracter barra invertida (`\`).
-
-```{.c filename="ejemplo" code-line-numbers="1-5|1-2|3-4"}
-#include <stm32f1xx.h>
-#include "pin.h"
-#define CICLOS_ITERACION 10
-#define ITERACIONES_MILISEGUNDO \
-    (FREC_RELOJ/(1000*CICLOS_ITERACION) - CICLOS_ITERACION) 
-```
-
-## Inclusiones
+#### Mas sobre inclusiones {#sec-include}
 
 Las directivas `#include` son reemplazadas por el contenido de otro archivo. Luego el procesamiento continúa desde la primera línea insertada.
 
 `#include <archivo.h>` : inserta el contenido de *archivo.h* en este punto antes de continuar. Busca *archivo.h* en los directorios de encabezados de librerías.  
 `#include "archivo.h"` : igual que el anterior, pero busca *archivo.h* también en el directorio actual.
 
-## Macros
+#### Mas sobre macros {#sec-macros}
 
-`#define MACRO_1 123`    : define una macro del preprocesador. En adelante cualquier ocurrencia de MACRO_1 es reemplazada por 123.  
-`#define MACRO_1 (1+44)` : si el valor de una macro es una expresión matemática **debe ir encerrado en paréntesis**.
+Las macros permiten definir palabras de modo que cuando el preprocesador las encuentra son sustituídas por la definición en forma *literal* (copiando y pegando la definición en el punto donde estaba la palabra). Es convención casi universal escribir los nombres de las macros en MAYUSCULAS, separando las partes por guión bajo si el nombre es compuesto. La definición de la macro termina al terminar la línea, sin embargo es posible definir macros de múltiples líneas para mejor legibilidad si se escapa con barra invertida el salto de línea (se escribe `\` inmediatamente antes de hacer el salto de línea). Las macros deben definirse en un encabezado si es que son utilizadas en más de un archivo fuente (**no repetir definiciones**).
 
-## Compilación condicional con \#if
+`#define MACRO_1 123` : define una macro del preprocesador. En adelante cualquier ocurrencia de MACRO_1 es reemplazada por 123.  
+`#define MACRO_1 (1+44)` : si el valor de una macro es una expresión **debe ir encerrado en paréntesis** puesto que las macros efectúan sustitución literal.
 
-`#if expresión` : Incluye un bloque de texto solo si la expresión es verdadera. En la expresión solo pueden particiapr *números y macros del preprocesador*. El bloque termina con `#endif` o `#else`.  
-`#else` : Luego de `#if`, termina el bloque `#if` e inicia otro que solo se incluye si el bloque `#if` *no fue incluído*. El bloque termina con `#endif`
+Existen también macros con parámetros, llamados *macros tipo función*. Estas macros se definen incluyendo una lista de parámetros pegada a la palabra (*sin espacios entre la lista y la palabra*). Estas macros se usan como si fuesen funciones de C, pero en lugar de ser un llamado a función el preprocesador las reemplaza por su definición. Dentro de la definición los parámetros son reemplazados por los valores indicados al usar la macro.
 
-```{.c}
-#if SUMAR == 1
-// (SUMAR es una macro que vale 1)
-#else
-// (SUMAR no vale 1)
-#endif
-```
+El @lst-ejemplo-macros muestra un ejemplo de uso de macros ilustrativo pero no recomendado en la práctica. `PIN_SET` y `PIN_CLEAR` son macros parametrizadas, `ESPERA` es una macro parametrizada que además usa múltiples líneas por claridad e incluye un bloque de código. La estructura do..while ejecuta el bloque exactamente una vez y su función es que sea necesario el punto y coma al final de la línea al usar la macro (para que su comportamiento sea similar a un llamado a función). El @lst-ejemplo-macros-expansion muestra la función main luego de la expansión de todas las macros. Pueden también definirse macros mediante argumentos de línea de comandos en la llamada al preprocesador, normalmente `-D<nombre de la macro>=<valor>` por ejemplo `-DCAPACIDAD_COLA=8` define la macro `CAPACIDAD_COLA` con la sustitución `8` antes de iniciar el procesamiento de los archivos.
 
-## Compilación condicional con \#ifdef
-
-`#ifdef MACRO` : Incluye un bloque de texto *solo si la macro está definida* (independiente de su valor). El bloque termina en `#endif` o en un bloque `#else ... #endif`.
-
-```{.c}
-#ifdef SUMAR
-// SUMAR está definida
-#else
-// SUMAR no está definida
-#endif
-```
-## Compilación condicional con \#ifndef
-
-`#ifndef MACRO` : Incluye un bloque de texto *solo si la macro **no** está definida* (independiente de su valor). El bloque termina en `#endif` o en un bloque `#else ... #endif`.
-
-Suele emplearse como guarda en los archivos de cabecera para evitar copiar varias veces el texto si son incluídos varias veces.
-
-```{.c}
-#ifndef SUMAR
-// SUMAR no está definida
-#define SUMAR
-// A partir de aquí SUMAR está definida
-#endif
-#ifndef SUMAR
-// Esto nunca se incluye
-#endif
-```
-
-## Encabezado
-
-Los archivos de encabezados incluyen definición de macros y declaración de funciones, tipos, y variables.
-
-Las funciones declaradas en un encabezado están definidas en otros archivos fuente o son parte de librerías.
-
-```{.c filename="miapp.h"}
-#ifndef MIAPP_H
-#define MIAPP_H
+:::{.callout appearance="minimal"}
+```{.c #lst-ejemplo-macros lst-cap="Ejemplo de macros (NO ES UN USO RECOMENDADO)"}
 #include <stm32f1xx.h>
 
+#define CFG_MODO_SALIDA 0b0010
+
 #define PUERTO_LED GPIOC
+#define PUERTO_LED_ENABLE RCC_APB2ENR_IOPCEN
 #define PIN_LED 13
-#define FREC_RELOJ 8000000
-#endif
+#define CR_LED (PUERTO_LED->CRH)
+#define OFFSET_CR_LED ((PIN_LED * 4) % 32)
+#define PIN_SET(puerto,pin) ((puerto)->BSRR = 1 << (pin))
+#define PIN_CLEAR(puerto,pin) ((puerto)->BRR = 1 << (pin))
+
+#define CICLOS_FOR_POR_MILISEGUNDO (8000000/(1000*13))
+#define ESPERA(milis) do{\
+  for (uint32_t i = (milis); i>0; --i){\
+    for (uint32_t volatile j=0;j<CICLOS_FOR_POR_MILISEGUNDO;++j);\
+  }\
+}while(0)
+
+int main(void){
+  RCC->APB2ENR |= PUERTO_LED_ENABLE;
+  CR_LED =  (CR_LED & (0xF << OFFSET_CR_LED)) 
+          | (CFG_MODO_SALIDA << OFFSET_CR_LED);
+  for(;;){
+    PIN_SET(PUERTO_LED,PIN_LED);
+    ESPERA(500);
+    PIN_CLEAR(PUERTO_LED,PIN_LED);
+    ESPERA(50*10);
+  }
+}
 
 ```
-## Archivo fuente
+```{.c #lst-ejemplo-macros-expansion lst-cap="Macros expandidas (lineas quebradas para que el código entre en el espacio)" code-line-numbers="false"}
+int main(void){
+  ((RCC_TypeDef *)((0x40000000UL + 0x00020000UL) + 0x00001000UL))->APB2ENR |= 
+  (0x1UL << (4U));
+  (((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL))->CRH) =  
+  ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL))->CRH) & 
+  (0xF << OFFSET_CR_LED)) 
+          | (0b0010 << ((13 * 4) % 32));
+  for(;;){
+    ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL)))->BSRR = 
+    1 << (13));
+    do{ for (uint32_t i = (500); i>0; --i){ for (uint32_t volatile j=0;
+    j<(8000000/(1000*13));++j); }}while(0);
+    ((((GPIO_TypeDef *)((0x40000000UL + 0x00010000UL) + 0x00001000UL)))->BRR = 
+    1 << (13));
+    do{ for (uint32_t i = (50*10); i>0; --i){ for (uint32_t volatile j=0;
+    j<(8000000/(1000*13));++j); }}while(0);
+  }
+}
 
-En el archivo fuente se definen las funciones que contienen el código del programa, variables estáticas globales (de enlace externo) y variables estáticas de enlace interno (visibles solo dentro del archivo donde se declaran).
+```
+:::
 
----
+#### Compilación condicional {#sec-compilacion-condicional}
 
-```{.c filename="espera.c"}
-#include <stdbool.h>     // bool
-#include <stdint.h>      // uint32_t
+Las directivas de compilación condicional permiten remover código fuente antes del paso de compilación de acuerdo al valor de una expresión constante (con `#if`) o bien según esté o no definida una macro (con `#ifdef` o `#ifndef`).
+
+`#if expresión` : Incluye un bloque de texto solo si la expresión es verdadera. En la expresión solo pueden particiapr *números y macros del preprocesador*. El bloque termina con `#endif` o `#else`.  
+`#else` : Luego de `#if`, termina el bloque `#if` e inicia otro que solo se incluye si el bloque `#if` *no fue incluído*. El bloque termina con `#endif`.  
+`#ifdef MACRO` : Incluye un bloque de texto *solo si la macro está definida* (independiente de su valor). El bloque termina en `#endif` o en un bloque `#else ... #endif`.  
+`#ifndef MACRO` : Incluye un bloque de texto *solo si la macro **no** está definida* (independiente de su valor). El bloque termina en `#endif` o en un bloque `#else ... #endif`.  
+Para complementar la compilación condicional contamos también con la directiva `#error` que permite abortar la compilación indicando un error. Junto con las directivas de compilación condicional permite abortar la compilación si no se cumple un requisito determinado.
+
+El @lst-comp-condicional contiene ejemplos de uso de las directivas de compilación condicional.
+
+
+:::{.callout appearance="minimal"}
+``` {.c #lst-comp-condicional lst-cap="Ejemplo compilación condicional"}
+#ifndef __STDC_VERSION__
+// Es una versión anterior a C99
+#define INLINE
+typedef bool unsigned char
+#define true 1
+#define false 0
+#else 
+#include <stdbool.h>
+#define INLINE inline
+#endif // __STDC_VERSION__
+
+#ifndef CAPACIDAD_COLA
+#define CAPACIDAD_COLA 8
+#endif
+
+#if CAPACIDAD_COLA & (CAPACIDAD_COLA - 1)
+#error Solo se soporta capacidad potencia de dos para la cola
+#endif
+```
+:::
+
+### Encabezados {#sec-encabezados}
+
+Los archivos de encabezados incluyen definición de macros y declaración de funciones, tipos, y variables. Son insertados en los archivos fuente mediante directivas `#include` (ver @sec-include). Su principal función es evitar la duplicación de código, ya que contienen declaraciones, definiciones de tipos y definiciones de constantes que son comunes a varios archivos fuente. Un encabezado puede a su vez incluir otros encabezados, y si se incluye varias veces un encabezado solo debiera insertarse la primera vez, siendo omitido mediante compilación condicional (ver @sec-compilacion-condicional) las veces siguientes. Las funciones y variables declaradas en un encabezado están definidas en otros archivos fuente o son parte de librerías. El @lst-ejemplo-encabezado presenta un encabezado sencillo. Observar que tiene un mecanismo de compilación condicional para evitar ser inserto múltiples veces. Este encabezado incluye otros encabezados necesarios para sus propias declaraciones y declara cinco funciones.
+
+:::{.callout appearance="minimal"}
+```{.c #lst-ejemplo-encabezado lst-cap="sp_tiempo.h"}
+#ifndef SP_TIEMPO_H
+#define SP_TIEMPO_H
+#include <stdint.h>   // define el tipo uint32_t
+#include <stdbool.h>  // define el tipo bool
+#include <i_accion.h> // define el tipo IAccion
+
+void SysTick_Handler(void);
+void SP_Tiempo_delay(uint32_t tiempo);
+bool SP_Tiempo_addTimeout(uint32_t tiempo,IAccion * accion);
+void SP_Tiempo_init(void);
+uint32_t SP_Tiempo_getMilisegundos(void);
+#endif
+```
+:::
+
+### Archivos fuente
+
+Definen las funciones que contienen el código del programa, variables estáticas globales (de enlace externo) y variables estáticas de enlace interno (visibles solo dentro del archivo donde se declaran).
+
+``` c
+#include <stdbool.h>   // bool
+#include <stdint.h>    // uint32_t
 #include <stm32f1xx.h>   // SysTick_Config, SystemCoreClock, __WFE
-#include "espera.h"      // este módulo
+#include "espera.h"    // este módulo
 static bool inicializado = 0;
 static volatile uint32_t ticks;
 static void inicializa(void){
-    SysTick_Config(SystemCoreClock/1000);
-    inicializado = 1;
+  SysTick_Config(SystemCoreClock/1000);
+  inicializado = 1;
 }
 void SysTick_Handler(void){
-    ++ticks;
+  ++ticks;
 }
 void espera(uint32_t ms){
-    if (!inicializado) inicializa();
-    const actual = ticks;
-    while ((ticks - actual) < ms) __WFE();
+  if (!inicializado) inicializa();
+  const actual = ticks;
+  while ((ticks - actual) < ms) __WFE();
 }
 ```
 
-## Función main
+### Función main
 
 El punto donde inicia la ejecución de nuestro programa se denomina punto de entrada. En C el punto de entrada de nuestro programa es una función llamada main que *debe retrornar un valor entero*. Si esta función retorna el programa termina. En el software embebido esta función tendrá un lazo infinito, no retornará nunca.
 
----
-
-```{.c filename="miapp.c"}
+``` c
 #include <stdbool.h> // bool
-#include "pin.h"     // Pin_salida, Pin_escribe
+#include "pin.h"   // Pin_salida, Pin_escribe
 #include "espera.h"  // espera
 #include "miapp.h"   // este módulo
 int main(void)
 {
-    bool estado=0;
-    Pin_salida(PUERTO_LED,PIN_LED);
-    while(1){
-        Pin_escribe(PUERTO_LED,PIN_LED,estado);
-        espera(500);
-        estado = !estado;
-    }
-    return 0;
+  bool estado=0;
+  Pin_salida(PUERTO_LED,PIN_LED);
+  while(1){
+    Pin_escribe(PUERTO_LED,PIN_LED,estado);
+    espera(500);
+    estado = !estado;
+  }
+  return 0;
 }
 ```
 
-## Sentencias
+### Sentencias
 
-
-:::{.callout}
 Son uno de los componentes, junto con las declaraciones, de todo programa en lenguaje C. Existen varias clases.
 
-- **Sentencias compuestas:** (llamadas **bloques de código** o **bloques**). Son secuencias de cero o más declaraciones y sentencias encerradas entre corchetes `{ }`.
-- **Sentencias de expresión:** Consisten en una expresíon seguida de un punto y coma `;`. La mayor parte de las sentencias en C son sentencias de expresión. Un punto y coma solo, sin expresión, es una sentencia nula.
-- **Sentencias de selección:** Permiten ejecutar distintas sentencias en forma condicional. `if`, `if-else`, `switch`
-- **Sentencias de iteración:** Permiten ejecutar repetidamente una sentencia. `while`, `do-while`,`for`
-- **Sentencias de salto:** Permiten cambiar el flujo de ejecución en forma incondicional `return`, `break`, `continue`, `goto`
-:::
+-   **Sentencias compuestas:** (llamadas **bloques de código** o **bloques**). Son secuencias de cero o más declaraciones y sentencias encerradas entre corchetes `{ }`.
+-   **Sentencias de expresión:** Consisten en una expresíon seguida de un punto y coma `;`. La mayor parte de las sentencias en C son sentencias de expresión. Un punto y coma solo, sin expresión, es una sentencia nula.
+-   **Sentencias de selección:** Permiten ejecutar distintas sentencias en forma condicional. `if`, `if-else`, `switch`
+-   **Sentencias de iteración:** Permiten ejecutar repetidamente una sentencia. `while`, `do-while`,`for`
+-   **Sentencias de salto:** Permiten cambiar el flujo de ejecución en forma incondicional `return`, `break`, `continue`, `goto`
 
----
-
-```{.c filename="Ejemplo"}
+``` c
 #include <stdio.h>
 int main(void)
 { // bloque
-    int N,D,Q,R; // declaración (no es una sentencia)
-    puts("Ingrese numerador: "); // sentencia de expresión
-    scanf("%d",&N);
-    puts("Ingrese denominador: ");
-    scanf("%d",&D);
-    /*  Condición. Es un expresión. Si su valor es verdadero
-        se ejecuta el bloque if, sinó el bloque else.
-        ↓                                                  */
-    if (D==0) {
-        puts("División por cero!\n"); // D==0 es verdadero
-    }
-    else { // D==0 es falso (D distinto de cero)
-        Q = N/D; // asignación, cociente
-        R = N%D; // asignación, módulo
-        printf("Cociente %d, Resto %d",Q,R); // llamado a función
-    }
-    return 0; //Sentencia de salto, retorna con valor 0.
+  int N,D,Q,R; // declaración (no es una sentencia)
+  puts("Ingrese numerador: "); // sentencia de expresión
+  scanf("%d",&N);
+  puts("Ingrese denominador: ");
+  scanf("%d",&D);
+  /*  Condición. Es un expresión. Si su valor es verdadero
+    se ejecuta el bloque if, sinó el bloque else.
+    ↓                          */
+  if (D==0) {
+    puts("División por cero!\n"); // D==0 es verdadero
+  }
+  else { // D==0 es falso (D distinto de cero)
+    Q = N/D; // asignación, cociente
+    R = N%D; // asignación, módulo
+    printf("Cociente %d, Resto %d",Q,R); // llamado a función
+  }
+  return 0; //Sentencia de salto, retorna con valor 0.
 }
 ```
 
----
-
-```{.c filename="Selección case"}
+``` c
 typedef enum {X_NULO,X_ENCENDER,X_APAGAR,X_CONMUTAR} Evento;
 typedef enum {E_APAGADO, E_ENCENDIDO} Estado;
 Estado transicion(Estado const estado,Evento const evento){
-    Estado nuevo;
-    /*       Expresión que debe producir un valor entero.
-             Se evalúa solo una vez. Luego salta a la etiqueta
-             case cuyo valor coincide con el resultado o a la
-             etiqueta default si ninguno coincide.
-              │
-              ↓                                              */
-    switch(estado){
-    case E_APAGADO:
-        // Sentencia switch anidada
-        switch(evento){
-        // Las etiquetas valen solo en el bloque
-        // donde están definidas. Si no hay una
-        // sentencia break la ejecución continúa
-        // en las etiquetas siguientes.
-        case X_ENCENDER: // estas dos etiquetas corresponden a la misma sentencia.
-        case X_CONMUTAR: // Una sentencia puede tener varias etiquetas.
-            nuevo = E_ENCENDIDO;
-        break; // Sale del switch. SI SE OMITE CONTINÚA EN EL SIGUIENTE case
-        case X_APAGAR:
-        default:
-            nuevo = estado;
-        }
-    break;
-    case E_ENCENDIDO:
-        switch(evento){
-        case X_APAGAR:
-        case X_CONMUTAR:
-            nuevo = E_APAGADO;
-        break;
-        case C_ENCENDER;
-        default:
-            nuevo = estado;
-        }
-    break;
-    default:
-        nuevo = E_APAGADO;
+  Estado nuevo;
+  /*     Expresión que debe producir un valor entero.
+       Se evalúa solo una vez. Luego salta a la etiqueta
+       case cuyo valor coincide con el resultado o a la
+       etiqueta default si ninguno coincide.
+        │
+        ↓                        */
+  switch(estado){
+  case E_APAGADO:
+    // Sentencia switch anidada
+    switch(evento){
+    // Las etiquetas valen solo en el bloque
+    // donde están definidas. Si no hay una
+    // sentencia break la ejecución continúa
+    // en las etiquetas siguientes.
+    case X_ENCENDER: // estas dos etiquetas corresponden a la misma sentencia.
+    /*fallthru*/case X_CONMUTAR: // Una sentencia puede tener varias etiquetas.
+      nuevo = E_ENCENDIDO;
+    break; // Sale del switch. SI SE OMITE CONTINÚA EN EL SIGUIENTE case
+    // usar el comentario /*fallthru*/ para indicar que la ausencia de
+    // break NO ES ACCIDENTAL
+    case X_APAGAR:
+    /*fallthru*/default:
+      nuevo = estado;
     }
-    return nuevo;
+  break;
+  case E_ENCENDIDO:
+    switch(evento){
+    case X_APAGAR:
+    /*fallthru*/case X_CONMUTAR:
+      nuevo = E_APAGADO;
+    break; default:
+      nuevo = estado;
+    }
+  break;
+  default:
+    nuevo = E_APAGADO;
+  }
+  return nuevo;
 }
 ```
 
-:::{.callout}
+::: callout
 Switch evalúa la expresión de selección una sola vez, luego salta según su valor. En esos casos es más claro que sentencias `if-else` anidadas. No olvidar el `break` al final de cada `case`.
 :::
 
----
-
-```{.c filename="Iteración for"}
+``` c
 int producto_punto(int n, int const *v1,int const *v2){
-    int a = 0;
-/*    Inicialización. Opcional. Permite declarar variables.
-         │
-         │      Condición evaluada antes de cada ejecución
-         │      del bloque. Si su resultado es verdadero el
-         │      bloque es ejecutado. Opcional. Si se omite
-         │      genera un lazo infinito.
-         │       │
-         │       │  Expresión de incremento, ejecutada 
-         │       │  luego de cada ejecución del bloque y
-         │       │  antes de comprobar la condición para la
-         │       │  siguiente ejecución. Opcional.
-         ↓       ↓   ↓                                   */
-    for(int k=0;k<n;++k){ // bloque
-        a += v1[k]*v2[k];
-    }
-    return a;
+  int a = 0;
+/*  Inicialización. Opcional. Permite declarar variables.
+     │
+     │    Condición evaluada antes de cada ejecución
+     │    del bloque. Si su resultado es verdadero el
+     │    bloque es ejecutado. Opcional. Si se omite
+     │    genera un lazo infinito.
+     │     │
+     │     │  Expresión de incremento, ejecutada 
+     │     │  luego de cada ejecución del bloque y
+     │     │  antes de comprobar la condición para la
+     │     │  siguiente ejecución. Opcional.
+     ↓     ↓   ↓                   */
+  for(int k=0;k<n;++k){ // bloque
+    a += v1[k]*v2[k];
+  }
+  return a;
 }
 ```
-:::{.callout-tip}
+
+::: callout-tip
 La sentencia `for (;;) {...}` produce un lazo infinito.
 :::
 
----
-
 ![Lazo `for` destacado en rojo.](producto_punto.png)
 
----
-
-```{.c filename="rcuad.h"}
+``` c
 #ifndef RCUAD_H
 #define RCUAD_H
 #include <stdbool.h> // bool, true, false
 typedef struct Opt_float{
-    bool es_float;
-    float valor;
+  bool es_float;
+  float valor;
 } Opt_float;
 Opt_float raiz_cuadrada(float num);
 #endif
-
 ```
 
-```{.c filename="rcuad.c"}
+``` c
 // Ejemplo iteración while
 #include "rcuad.h"
 static float error_abs(float ref,float val){
-    float const err = ref - val;
-    if (err<0) return -err;
-    return err;
+  float const err = ref - val;
+  if (err<0) return -err;
+  return err;
 }
 Opt_float raiz_cuadrada(float num){
-    float tol = num*1e-6, r = 1,err;
-    if (num < 0) return  (Opt_float){false};
-    if (num == 0) return (Opt_float){true,0};
-    while(error_abs(num,r*r) > tol){
-        r = (num/r+r)/2;
-    }
-    return (Opt_float){true,r};
+  float tol = num*1e-6, r = 1,err;
+  if (num < 0) return  (Opt_float){false};
+  if (num == 0) return (Opt_float){true,0};
+  while(error_abs(num,r*r) > tol){
+    r = (num/r+r)/2;
+  }
+  return (Opt_float){true,r};
 }
 ```
 
----
-
-```{.c filename="main.c"}
+``` c
 // Ejemplo de do-while
 #include <stdio.h>
 #include "rcuad.h"
 int main(void){
-    Opt_float r;
-    do{
-        float x;
-        printf("Ingrese un número no negativo o -1 para terminar: ");
-        scanf("%f",&x);
-        r=raiz_cuadrada(x);
-        if (r.es_float)
-            printf("La raíz cuadrada de %g es %g.\n",x,r.valor);
-    }while(r.es_float);
-    return 0;
+  Opt_float r;
+  do{
+    float x;
+    printf("Ingrese un número no negativo o -1 para terminar: ");
+    scanf("%f",&x);
+    r=raiz_cuadrada(x);
+    if (r.es_float)
+      printf("La raíz cuadrada de %g es %g.\n",x,r.valor);
+  }while(r.es_float);
+  return 0;
 }
 ```
 
-:::{.callout-tip}
+::: callout-tip
 `do-while` ejecuta el bloque de código **al menos una vez**, mientras que `while` solo lo ejecuta si se cumple la condición.
 :::
 
@@ -453,26 +561,24 @@ int main(void){
 
 Una declaración indica la existencia de una variable o función, define su tipo, modo de acceso y (en el caso de variables) puede definir su valor inicial. La declaración de una variable realiza la correspondiente reserva de memoria.
 
-```{.c filename="Declaración de variable"}
+``` c
   static const signed int mivar_1 = 10;
 /*────── ───── ────────── ─────── ────
- *   ↑     ↑        ↑        ↑      ↑
- *   │     │        │        │      └── Inicializador
- *   │     │        │        └ Declarador de variable
- *   │     │        └──────── Especificadores de tipo
- *   │     └───────────────────── Calificador de tipo
+ *   ↑   ↑    ↑    ↑    ↑
+ *   │   │    │    │    └── Inicializador
+ *   │   │    │    └ Declarador de variable
+ *   │   │    └──────── Especificadores de tipo
+ *   │   └───────────────────── Calificador de tipo
  *   └────── Especificador de clase de almacenamiento
  */
 ```
 
----
-
-```{.c filename="Declaraciones múltiples"}
+``` c
   int A, B = 5, *C = &B;
 /*─── ─  ─ ───  ── ────
- * ↑  ↑  ↑  ↑    ↑   ↑
- * │  │  │  │    │   └──── Inicializador ⎫ Lista
- * │  │  │  │    └ Declarador de puntero ⎪ de
+ * ↑  ↑  ↑  ↑  ↑   ↑
+ * │  │  │  │  │   └──── Inicializador ⎫ Lista
+ * │  │  │  │  └ Declarador de puntero ⎪ de
  * │  │  │  └───────────── Inicializador ⎬ declaradores
  * │  │  └─────── Declarador de variable ⎪ e
  * │  └────────── Declarador de variable ⎭ inicializadores
@@ -484,25 +590,21 @@ Una declaración indica la existencia de una variable o función, define su tipo
  */
 ```
 
----
-
-```{.c filename="declaración de función void"}
+``` c
   void funcion1(int a,int b);
 /*──── ────────┴────────────
- * ↑      ↑          ↑
- * │      │          └ Lista de parámetros⎱ Declarador de
- * │      └───────────────── Identificador⎰ función
+ * ↑    ↑      ↑
+ * │    │      └ Lista de parámetros⎱ Declarador de
+ * │    └───────────────── Identificador⎰ función
  * └──────────────── Especificador de tipo retornado
  */
 ```
 
----
-
-```{.c filename="declaración de función que retorna puntero"}
+``` c
   void *funcion2(int a,int b);
 /*──── ─┴───────┴────────────
- * ↑   ↑  ↑          ↑
- * │   │  │          └ Lista de parámetros⎫ Declarador de
+ * ↑   ↑  ↑      ↑
+ * │   │  │      └ Lista de parámetros⎫ Declarador de
  * │   │  └───────────────── Identificador⎬ función que
  * │   └────────── Retorna puntero a tipo ⎭ retorna puntero
  * └─────────────── Especificador de tipo
@@ -511,8 +613,7 @@ Una declaración indica la existencia de una variable o función, define su tipo
 
 ## Memoria de datos
 
-Un microcontrolador posee al menos memoria de programa no volátil (usualmente flash) y memoria de datos volátil (usualmente sram). La memoria de programa contiene al programa y las constantes. La memoria de datos contiene las variables.
-Nota: Para usar una variable en un cómputo (parte de) su valor debe copiarse a los registros del procesador.
+Un microcontrolador posee al menos memoria de programa no volátil (usualmente flash) y memoria de datos volátil (usualmente sram). La memoria de programa contiene al programa y las constantes. La memoria de datos contiene las variables. Nota: Para usar una variable en un cómputo (parte de) su valor debe copiarse a los registros del procesador.
 
 ## Organización de memoria de datos
 
@@ -522,38 +623,30 @@ Nota: Para usar una variable en un cómputo (parte de) su valor debe copiarse a 
 
 En C las variables pueden tener distintas clases de almacenamiento según la forma en que se reserva memoria para las mismas. Las clases de almacenamiento más relevantes son estático y automático.
 
----
-
 *Almacenamiento estático* : La memoria es reservada en tiempo de compilación (antes de ejecutar el programa) en las secciones .data (inicializadas a algún valor) y .bss (inicializadas a cero).
 
-- Variables declaradas fuera de una función
-- Variables dentro de una función con especificador `static`
-
----
+-   Variables declaradas fuera de una función
+-   Variables dentro de una función con especificador `static`
 
 *Almacenamiento automático* : La memoria es reservada en la pila de llamados al activarse una función y liberada al retornar.
 
-- Variables declaradas dentro de una función sin especificador o con especificador `auto` (en desuso, al igual que `register`)
+-   Variables declaradas dentro de una función sin especificador o con especificador `auto` (en desuso, al igual que `register`)
 
-- Los parámetros de una función son variables con esta clase de almacenamiento
+-   Los parámetros de una función son variables con esta clase de almacenamiento
 
----
+*Almacenamiento en registro* : En lo posible la variable se mantendrá en un registro del procesador. No puede obtenerse su dirección (se supone que no está en memoria).
 
-*Almacenamiento en registro* : En lo posible la variable se mantendrá en un registro del procesador. No puede obtenerse su dirección (se supone que no está en memoria). 
+-   Variables declaradas dentro de una función con especificador `register`
 
-- Variables declaradas dentro de una función con especificador `register`
-
-:::{.callout-warning}
-
+::: callout-warning
 Esta clase **es obsoleta**. El compilador hace la optimización en forma automática cuando es oportuno con una variable auto. **No usar**.
-
 :::
 
 ## Definición de tipo
 
 La definición de tipo es considerada una clase de almacenamiento, pero no reserva memoria para una variable sino que convierte el identificador en un nombre abreviado para el tipo de datos especificado. Se indica con `typedef`
 
-```{.c}
+``` c
 // Define el tipo dword como sinónimo
 // de long long int
 typedef long long int dword;
@@ -563,48 +656,42 @@ typedef long long int dword;
 
 Las variables son símbolos asociados a espacios de memoria que almacenan datos. La vinculación o enlace determina el ámbito desde el es accesibles una variable declarada fuera de una función.
 
----
-
 **Sín vinculación** : variables declaradas dentro de una función (estáticas o automáticas) y parámetros, solo pueden ser accedidas dentro del bloque de código donde fueron declaradas.
 
-```{.c filename="Ejemplo"}
+``` c
 // a, b y c son variables 
 // con almacenamiento automático
 // y sin vinculación
 int suma(int a,int b){
-    int c = a+b;
-    return c;
+  int c = a+b;
+  return c;
 }
 // numeros es una variable
 // con almacenamiento estático
 // y sin vinculación
 int main(void){
-    static int numeros[500];
-    ...
+  static int numeros[500];
+  ...
 }
 ```
----
 
 **Vinculación interna** : variables `static` declaradas fuera de una función. Solo son accesibles desde el código de la unidad de traducción (archivo .c y encabezados incluidos) donde fueron declaradas, a partir del primer punto en que fueron declaradas.
 
-```{.c filename="Ejemplo"}
+``` c
 static int mivar1;
 ```
 
----
-
 **Vinculación externa** : variables `extern` (o sin especificador) declaradas dentro (no recomendable) o fuera de una función. Son accesibles desde cualquier unidad de traducción (archivo .c) y desde el código externo si se trata de una librería.
 
-```{.c filename="ejemplo.h"}
+``` c
 #ifndef EJEMPLO_H
 #define EJEMPLO_H
 // Esta es una declaración externa que no reserva espacio
 extern int numero_global;
 #endif
-
 ```
 
-```{.c filename="ejemplo.c"}
+``` c
 #include <ejemplo.h>
 // Si se omite extern la declaración también es externa 
 // pero sí reserva espacio. Solo puede hacerse reserva 
@@ -612,53 +699,47 @@ extern int numero_global;
 // que acceden la variable debe usarse extern
 // (normalmente se hace al incluir ejemplo.h)
 int numero_global;
-
 ```
 
 ## Calificadores
 
 Indican al compilador como se debe utilizar una variable. Los calificadores son `const`, `volatile` y `restrict`.
 
-:::{.callout-note}
-Desde C11 existe el calificador _Atomic, que garantiza que las operaciones de incremento (`++`), decremento (`--`) y asignación compuesta (`+=`, `-=`, `|=`, `&=`, etc.) se *ejecutan sin interrupción* en casos donde varios procesos pueden acceder concurrentemente a memoria.
-Todo esto implica también que los accesos se suponen con efecto secundario, de la misma forma que *volatile*.
+::: callout-note
+Desde C11 existe el calificador \_Atomic, que garantiza que las operaciones de incremento (`++`), decremento (`--`) y asignación compuesta (`+=`, `-=`, `|=`, `&=`, etc.) se *ejecutan sin interrupción* en casos donde varios procesos pueden acceder concurrentemente a memoria. Todo esto implica también que los accesos se suponen con efecto secundario, de la misma forma que *volatile*.
 :::
-
----
 
 **Calificador const** : Indica que la variable es de solo lectura. Debe asignarsele un valor al declararla (excepto variables extern, que solo en una de sus declaraciones puede tener asignado un valor). Si califica el tipo apuntado por un puntero indica que ese puntero puede ser usado solo para leer pero no para modificar memoria.
 
-```{.c filename="Ejemplo"}
+``` c
 int suma(int a,int b){
-    const int c = a + b;
-    return c; 
+  const int c = a + b;
+  return c; 
 }
 int strlen(const char *c){
-    int A=0;
-    while(*c){ // lee
-        ++A;
-        ++c; // desplaza puntero
-    }
-    return A;
+  int A=0;
+  while(*c){ // lee
+    ++A;
+    ++c; // desplaza puntero
+  }
+  return A;
 }
 ```
 
----
+**Calificador volatile** : Inidica que el contenido de la variable puede tener un efecto secundario sobre el hardware o bien ser afectado por el hardware en forma independiente al flujo normal del programa. Debe ser usado si una variable es accedida desde una rutina de servicio de interrupción.
 
-**Calificador volatile** : Inidica que el contenido de la variable puede tener un efecto secundario sobre el hardware o bien ser afectado por el hardware en forma independiente al flujo normal del programa. Debe ser usado si una variable es accedida desde una rutina de servicio de interrupción. 
-
-```{.c filename="Ejemplo"}
+``` c
 volatile unsigned long ticks;
 // Rutina de servicio de interrupción llamada
 // por el timer SysTick una ves por milisegundo
 void SysTick_Handler(void){
-    ++ticks;
+  ++ticks;
 }
 
 void espera(unsigned long ms){
-    const unsigned long inicial = ticks;
-    while(ticks - inicial < ms)
-        __WFE();
+  const unsigned long inicial = ticks;
+  while(ticks - inicial < ms)
+    __WFE();
 }
 ```
 
@@ -670,18 +751,14 @@ Los **tipos básicos** en C son `void`, *tipos aritméticos*, *tipos definidos p
 
 Los tipos derivados son arreglos, funciones, punteros y (desde C11) tipos atómicos.
 
----
-
 `void` : El tipo void es un tipo especial que indica que no hay un valor.
 
-- No puede declararse una variable `void`.
-- Si una función indica como tipo retornado `void` significa que no retorna ningún valor.
-- Si la lista de parámetros de una función es `(void)` indica que la función no toma ningún parámetro.
-- Un puntero a `void` es un puntero universal, debe convertirse a otro tipo de puntero para usarse y puede asignársele la dirección de cualquier puntero excepto un puntero a función.
+-   No puede declararse una variable `void`.
+-   Si una función indica como tipo retornado `void` significa que no retorna ningún valor.
+-   Si la lista de parámetros de una función es `(void)` indica que la función no toma ningún parámetro.
+-   Un puntero a `void` es un puntero universal, debe convertirse a otro tipo de puntero para usarse y puede asignársele la dirección de cualquier puntero excepto un puntero a función.
 
----
-
-```{.c filename="ejemplo"}
+``` c
 
 /* Una rutina de servicio de interrupción
  * es llamada por hardware. No puede recibir
@@ -689,8 +766,8 @@ Los tipos derivados son arreglos, funciones, punteros y (desde C11) tipos atómi
  * quien lo reciba).
  */ 
    void SysTick_Handler(void){...}
-/*   ↑                    ↑
- *   │                    └ No acepta argumentos
+/*   ↑          ↑
+ *   │          └ No acepta argumentos
  *   └───────────────────────── No retorna valor
  */
 
@@ -700,14 +777,12 @@ Los tipos derivados son arreglos, funciones, punteros y (desde C11) tipos atómi
  * una dirección de memoria sobre cuyo contenido
  * no se tiene ninguna información.
  */
-    void * malloc(size_t size);
+  void * malloc(size_t size);
 ```
-
----
 
 *Tipos aritméticos* : indican que una variable contiene un valor numérico.
 
-```{.c filename="Tipos enteros"}
+``` c
 // Tipo lógico. Solo toma valores 0 (falso) y 1(verdadero). En ARM 8 bits
 _Bool flag=1;
 // Tipos de caracter. Enteros de al menos 8 bits. En ARM 8 bits
@@ -727,29 +802,24 @@ unsigned long int F=998310LU; // sin signo. Sinónimo: unsigned long
 signed long long int G=234102391304LL; // signed long long, long long
 unsigned long long int H=0x0123456789ABCDEFLLU; // unsigned long long
 ```
----
 
-:::{.callout-tip}
+::: callout-tip
 El compilador de C acepta las siguientes constantes numéricas enteras:
 
-- **Binario:** indicado con el prefijo `0b`. Ej. `0b111010011`  
-- **Octal (base 8):** indicado anteponiendo un cero. Ej. `0723`.
-- **Decimal:** un número decimal *sin ceros a la izquierda*. Ej. `467`.
-- **Hexadecimal:** indicado con el prefijo `0x`. Ej. `0x1d3` o `0x1D3`.
+-   **Binario:** indicado con el prefijo `0b`. Ej. `0b111010011`\
+-   **Octal (base 8):** indicado anteponiendo un cero. Ej. `0723`.
+-   **Decimal:** un número decimal *sin ceros a la izquierda*. Ej. `467`.
+-   **Hexadecimal:** indicado con el prefijo `0x`. Ej. `0x1d3` o `0x1D3`.
 :::
 
----
+*Tipo de dato de los literales enteros*: Para indicar el tipo del entero se usan sufijos (caracteres incluidos luego de escribir el número), que pueden ubicarse en cualquier orden.
 
-:::{.callout-tip}
-Para indicar el tipo del entero se usan sufijos, que pueden ubicarse en cualquier orden.
+-   Sin sufijos es un tipo `int` (entero con signo de al menos 16 bit, en ARM 32 bit).
+-   Sufijo `U` o `u` indica `unsigned` (entero sin signo).
+-   Sufijo `L` o `l` indica `long` (al menos 32 bit). *Usar siempre `L` para evitar confusión con el número uno `1`.*
+-   Sufijo `LL` o `ll` indica `long long` (al menos 64 bit). *Usar siempre `LL` para evitar confusión con el número uno `1`.*
 
-- Sin sufijos es un tipo `int` (entero con signo de al menos 16 bit, en ARM 32 bit).
-- Sufijo `U` o `u` indica `unsigned` (entero sin signo).
-- Sufijo `L` o `l` indica `long` (al menos 32 bit). *Usar siempre `L` para evitar confusión con el número uno `1`.*
-- Sufijo `LL` o `ll` indica `long long` (al menos 64 bit). *Usar siempre `LL` para evitar confusión con el número uno `1`.*
-:::
-
-```{.c filename="Constantes enteras"}
+``` c
 int A=0b111010011,B=0773,C=467,D=0x1d3,E=-1230;
 unsigned u=0x1123U;
 long x=1922L, y=0655733L, z=-1923L;
@@ -758,19 +828,18 @@ long long w=-80123456789LL;
 unsigned long long m=0xDEADBEEFDEADBEEFuLL;
 ```
 
+*Punto flotante*: Los tipos `float` y `double` representan números en punto flotante binarios. La representación en punto flotante es análoga a la representación científica decimal, puede escribirse como $\pm{m}\cdot2^{E}$. Consta un signo (positivo o negativo), una mantisa $m$ con $0 < m < 2$ y un exponente $E$.
 
----
-
-```{.c filename="Tipos de punto flotante"}
+``` c
 // El soporte por hardware está en la unidad de punto flotante (FPU), no en el CPU
 // Cortex-M3 no inclue FPU, Cortex-M4 Sí
-// Emulados por software, computacionalmente costoso
+// Si no hay FPU se emula por software, computacionalmente costoso
 float a = 1.45e-45; // Punto flotante de 32 bit
 double b = 1.4535e-500; // Punto flotante de 64 bit
 long double c = 1.234204221;
 ```
 
-:::{.callout-important}
+::: callout-important
 Si es necesario usar punto flotante y se requiere procesamiento rápido y/o bajo consumo, uno de los requerimientos a la hora de elegir un microcontrolador es que cuente con unidad de punto flotante (FPU).
 
 Si el rendimiento no es importante muchas veces es suficiente con el punto flotante emulado.
@@ -778,60 +847,57 @@ Si el rendimiento no es importante muchas veces es suficiente con el punto flota
 
 ## Enumeraciónes
 
-Las enumeraciones son tipos que pueden tomar un valor entre un conjunto discreto de valores asociados a nombres. Los nombres operan como constantes enteras válidas en el ámbito donde es visible el tipo. El tamaño en memoria de una variable de tipo enum depende de la implementación y del tamaño de las constantes numéricas.
-Los valores de las constantes de una enumeración son enteros y pueden asignarse también a variables enteras.
+Las enumeraciones son tipos que pueden tomar un valor entre un conjunto discreto de valores asociados a nombres. Los nombres operan como constantes enteras válidas en el ámbito donde es visible el tipo. El tamaño en memoria de una variable de tipo `enum` depende de la implementación y debe ser suficiente para almacenar el valor de todas las constantes definidas en una enumeración dada. Los valores de las constantes de una enumeración son de tipo entero (`int`) y pueden usarse en cualquier sitio donde pueda utilizarse un valor entero.
 
----
-
-```{.c filename="Ejemplo"}
+``` c
 // Si no se dan valores explícitamente
 // el primer elemento será cero y subsiguientes
 // elementos toman el valor siguiente del elemento
 // anterior
 typedef enum {
-    FUERA_DE_SERVICIO,  // FUERA_DE_SERVICIO vale 0
-    VERDE = 10,         // VERDE vale 10
-    AMARILLO,           // AMARILLO vale 11
-    ROJO,               // ROJO vale 12
+  FUERA_DE_SERVICIO,  // FUERA_DE_SERVICIO vale 0
+  VERDE = 10,     // VERDE vale 10
+  AMARILLO,       // AMARILLO vale 11
+  ROJO,         // ROJO vale 12
 }EstadoSemaforo;
 ```
 
-:::{.callout-tip}
+::: callout-important
+Los valores de las constantes de una enumeración son limitados a los valores del tipo de datos `int`, que dependiendo de la plataforma puede ser 16, 32 o 64 bit. En la plataforma ARM de 32 bit el tipo entero es de 32 bit.
+:::
+
+::: callout-tip
 Al definir una enumeración se crean constantes enteras para sus valores. Estas constantes son símbolos del compilador, no macros. Valen solo en el ámbito dentro del cual se definió la enumeración y pueden incorporarse en la información de depuración.
 :::
 
-## Estructuras
+## Estructuras {#sec-estructuras}
 
-Un tipo estructura es una concatenacion de uno o mas tipos de datos. Son **conjunciones** de tipos, es decir 
+Un tipo estructura es una concatenacion de uno o mas tipos de datos. Son **conjunciones** de tipos, es decir
 
 `struct{int a,char b,int c} mivar;`
 
-reserva memoria para a **y** b **y** c. Además reservará memoria para mantener la alineación en memoria de modo que c comienze en dirección par.
+reserva memoria para a **y** b **y** c. Además reservará memoria para mantener la alineación de modo que c comienze en dirección múltiplo de 4 (porque su tamaño es de 32 bit).
 
----
+El acceso a los miembros de una estructura a partir de un objeto (llamado *lvalor*) tipo estructura se realiza mediante el operador punto (`mivar.a` para acceder al miembro `a` del objeto estructura en la variable `mivar`). Para acceder a un miembro de una estructura a través de un puntero a la misma ([ver @sec-punteros])
 
-```{.c filename="Ejemplo"}
+``` c
 /*  ┌──── Palabra clave, indica que es un tipo estructura
-    │         ┌ Etiqueta que se refiere a esta definición
-    │         │     ┌──── Definición de struct Estructura
-    ↓         ↓     ↓       */
+  │     ┌ Etiqueta que se refiere a esta definición
+  │     │   ┌──── Definición de struct Estructura
+  ↓     ↓   ↓     */
   struct Estructura {
-      int miembro_1;
-      // Definición de estructura anónima (sin etiqueta)  
-      struct {
-          long parte_1;
-          long parte_2;
-      }miembro_2;
-      // Los miembros pueden ser arreglos
-      char miembro_3[20];
-      // Los miembros pueden ser punteros
-      unsigned long *miembro_4;
+    int miembro_1;
+    // Definición de estructura anónima (sin etiqueta)  
+    struct {
+      long parte_1;
+      long parte_2;
+    }miembro_2;
+    // Los miembros pueden ser arreglos
+    char miembro_3[20];
+    // Los miembros pueden ser punteros
+    unsigned long *miembro_4;
   } var1, *var2;
-```
 
----
-
-```{.c filename="Ejemplo (continuación)"}
 // Define un tipo Estructura
 typedef struct Estructura Estructura;
 // Tipo Estructura
@@ -839,117 +905,109 @@ Estructura var3;
 // Equivalente
 struct Estructura var4;
  int main(void){
-    var2 = &var1;
-    // Acceso a miembros de estructura
-    var1.miembro_1 = 5;
-    var1.miembro_2.parte_1 = 4;
-    // Acceso a miembros desde puntero a estructura
-    var2->miembro_2.parte_2 = 3;
-    var2->miembro_3[5]=4;
-    // Forma equivalente (pero no usada). LOS PARÉNTESIS SON NECESARIOS
-    (*var2).miembro_3[6]=5;
-    return 0;
+  var2 = &var1;
+  // Acceso a miembros de estructura
+  var1.miembro_1 = 5;
+  var1.miembro_2.parte_1 = 4;
+  // Acceso a miembros desde puntero a estructura
+  var2->miembro_2.parte_2 = 3;
+  var2->miembro_3[5]=4;
+  // Forma equivalente (pero no usada). LOS PARÉNTESIS SON NECESARIOS
+  (*var2).miembro_3[6]=5;
+  return 0;
  }
 ```
 
----
-
-```{.c filename="Estructuras como valores"}
+``` c
 typedef struct Punto{
-    int x,y;
+  int x,y;
 } Punto;
 Punto Punto_suma(Punto a,Punto b){
-    // a y b son copias (pasaje por valor)
-    // Literal compuesto de tipo estructura
-    return (Punto){.x = a.x + b.x,
-                   .y = a.y + b.y};
+  // a y b son copias (pasaje por valor)
+  // Literal compuesto de tipo estructura
+  return (Punto){.x = a.x + b.x,
+           .y = a.y + b.y};
 }
 int main(void){
-    // inicialización
-    Punto a={1,4},c={0}; // con lista
-    Punto b={.y=7};      // con designación
-    // Miembros omitidos son inicializados a 0
-    c = Punto_suma(a,b); // no altera a y b
-    return 0;
+  // inicialización
+  Punto a={1,4},c={0}; // con lista
+  Punto b={.y=7};    // con designación
+  // Miembros omitidos son inicializados a 0
+  c = Punto_suma(a,b); // no altera a y b
+  return 0;
 }
 ```
 
----
-
-```{.c filename="Uso de punteros a estructura"}
+``` c
 typedef struct MiEstado{
-    uint32_t R[16], xpsr;
+  uint32_t R[16], xpsr;
 } MiEstado; // Ocupa 68 bytes
 void muestraEstado_copia(MiEstado e){
-    // Cada vez que se llama a esta función
-    // se copian los 68 bytes!
-    ...
+  // Cada vez que se llama a esta función
+  // se copian los 68 bytes!
+  ...
 }
 void muestraEstado_ptr(MiEstado *e){
-    // Esta función tiene acceso de escritura
-    // al estado, es INSEGURO!
-    ...
+  // Esta función tiene acceso de escritura
+  // al estado, es INSEGURO!
+  ...
 }
 void muestraEstado_cptr(const MiEstado *e){
-    // Es la mejor manera. Omite copiar el estado
-    // pero lo proteje contra cambios imprevistos
-    ...
+  // Es la mejor manera. Omite copiar el estado
+  // pero lo proteje contra cambios imprevistos
+  ...
 }
 ```
 
 ## Uniones
 
-Un tipo union es un tipo que puede contener valores de otros tipos, pero solo un valor por vez. Son **disyunciones** de tipos, es decir 
+Un tipo union es un tipo que puede contener valores de otros tipos, pero solo un valor por vez. Son **disyunciones** de tipos, es decir
 
 `union {int a,char b,long long c} mivar;`
 
 reserva memoria para el más grande entre a,b y c. Puede contener a **o** b **o** c, pero **solo uno por vez**. Al usar uniones lo mejor es ubicarlas dentro de estructuras donde otro miembro determine *cual de los valores es contenido*.
 
----
-
-```{.c filename="Ejemplo (1/2)"}
+``` c
 typedef struct Var{
-    enum {ERROR,NUM_16,NUM_32,NUM_64} tipo;
-    // Si no se indica miembro, los miembros de la
-    // union se acceden como si fuesen miembros de
-    // la estructura
-    union{
-        enum CodigoError error;
-        int16_t v16;
-        int32_t v32;
-        int64_t v64;
-    };
+  enum {ERROR,NUM_16,NUM_32,NUM_64} tipo;
+  // Si no se indica miembro, los miembros de la
+  // union se acceden como si fuesen miembros de
+  // la estructura
+  union{
+    enum CodigoError error;
+    int16_t v16;
+    int32_t v32;
+    int64_t v64;
+  };
 } Var;
 ```
 
----
-
-```{.c filename="Ejempo (2/2)"}
+``` c
 Var recibe_elemento(void){
-    Var r;
-    recibe_bytes(sizeof(r.tipo),&r.tipo);
-    switch(r.tipo){
-    case ERROR:
-        recibe_bytes(sizeof(r.error),&r.error);
-    break;case NUM_16:
-        recibe_bytes(2,&r.v16);
-    break;case NUM_32:
-        recibe_bytes(4,&r.v32);
-    break;case NUM_64:
-        recibe_bytes(8,&r.v64);
-    break;default:
-        r.tipo = ERROR;
-        r.error = MENSAJE_NO_VALIDO;
-    }
-    return r;
+  Var r;
+  recibe_bytes(sizeof(r.tipo),&r.tipo);
+  switch(r.tipo){
+  case ERROR:
+    recibe_bytes(sizeof(r.error),&r.error);
+  break;case NUM_16:
+    recibe_bytes(2,&r.v16);
+  break;case NUM_32:
+    recibe_bytes(4,&r.v32);
+  break;case NUM_64:
+    recibe_bytes(8,&r.v64);
+  break;default:
+    r.tipo = ERROR;
+    r.error = MENSAJE_NO_VALIDO;
+  }
+  return r;
 }
-
 ```
+
 ## Tipo función
 
 Las funciones son los objetos que contienen el código ejecutable del programa. Su tipo define la interfaz entre el código que contienen y el resto del programa. Cuando se declara una función esto no reserva memoria alguna, sino que indica al compilador que existe una definición de función con el mismo nombre que contiene código ejecutable, e indica como interactuar con ese código.
 
-:::{.callout-note}
+::: callout-note
 En el caso de las funciones inline, la definición toma el lugar de la declaración y hay una declaración en el punto donde sería la definición.
 :::
 
@@ -957,25 +1015,23 @@ En el caso de las funciones inline, la definición toma el lugar de la declaraci
 
 Para hacer uso de una función se emplea una expresión de llamado a función. Dicha expresión consiste en el identificador (nombre) seguido de la lista de parámetros entre paréntesis. Los paréntesis indican que es un llamado a función. En caso de que la función no acepte parámetros debe usarse una lista vacía "`()`".
 
----
-
-```{.c filename="Ejemplo"}
+``` c
 #include <stdio.h>  // puts, fputs, stderr, EOF
 #include <stdlib.h> // exit
 static void decir_hola(void){
-    // Llamado a puts, acepta un parámetro y retorna un valor entero
-    const int resultado = puts("Hola Mundo!\n");
-    if (resultado == EOF){
-        // El valor retornado por fputs es ignorado.
-        fputs("Error al escribir en STDOUT\n",stderr);
-        exit(1);
-    }
+  // Llamado a puts, acepta un parámetro y retorna un valor entero
+  const int resultado = puts("Hola Mundo!\n");
+  if (resultado == EOF){
+    // El valor retornado por fputs es ignorado.
+    fputs("Error al escribir en STDOUT\n",stderr);
+    exit(1);
+  }
 }
 int main(void)
 {
-    // decir_hola no acepta parámetros ni retorna valor. Los paréntesis
-    // vacíos indican que es un llamado a función y son necesarios.
-    decir_hola();
+  // decir_hola no acepta parámetros ni retorna valor. Los paréntesis
+  // vacíos indican que es un llamado a función y son necesarios.
+  decir_hola();
 }
 ```
 
@@ -983,42 +1039,35 @@ int main(void)
 
 El tipo función es una clase de tipo derivado, donde el tipo base identifica el tipo retornado por la función, y además se especifican otros tipos que corresponden a los argumentos de la función. Un declarador de función se construye ubicando una lista de argumentos entre paréntesis a la derecha del identificador. Si una función no retorna valor su tipo base debe ser *void*. Y si no acepta argumentos la lista de argumentos debe contener solo uno, de tipo *void*.
 
-:::{.callout-note}
+::: callout-note
 En este curso trataremos la declaración de funciones moderna, correspondiente a C99 y posterior. La forma histórica sigue siendo soportada pero no es recomendable.
 :::
 
----
-
-```{.c filename="Ejemplo"}
+``` c
   int f1(void), f2(int,int);
 /*─── ────────  ─────────── 
- * ↑  ↑         ↑
- * │  │         └ Declarador de función que
- * │  │           acepta dos argumentos enteros
- * │  │           y retorna un valor entero
+ * ↑  ↑     ↑
+ * │  │     └ Declarador de función que
+ * │  │       acepta dos argumentos enteros
+ * │  │       y retorna un valor entero
  * │  │
  * │  └──── Declarador de función que no acepta
- * │        argumentos y retorna un valor entero
+ * │    argumentos y retorna un valor entero
  * │
  * └───── Tipo base entero, determina el tipo de
- *        valor retornado.
+ *    valor retornado.
  */
 ```
 
-:::{.callout-note}
-Si bien este ejemplo declara dos funciones
-en con el mismo especificador de tipo base,
-es conveniente por claridad declarar cada
-función por separado.
+::: callout-note
+Si bien este ejemplo declara dos funciones en con el mismo especificador de tipo base, es conveniente por claridad declarar cada función por separado.
 :::
 
----
-
-```{.c filename="Ejemplo"}
+``` c
 typedef struct Opc_ResultadoDiv{
-    bool es_resultado;
-    int cociente;
-    int resto;
+  bool es_resultado;
+  int cociente;
+  int resto;
 } Opc_ResultadoDiv;
 
 Opc_ResultadoDiv dividir(int numerador,int denominador);
@@ -1030,30 +1079,23 @@ Opc_ResultadoDiv dividir(int numerador,int denominador);
  */
 ```
 
-:::{.callout-note}
-El tipo `Opc_ResultadoDiv` comienza su nombre por Opc_ por
-*opcional*. En caso de que `es_resultado` sea *falso* significa
-que ocurrió un problema (divisor cero) y no fue posible 
-determinar el resultado. Este clase de tipo de estructura 
-Op_... es práctico en casos donde puedan ocurrir errores.
+::: callout-note
+El tipo `Opc_ResultadoDiv` comienza su nombre por Opc\_ por *opcional*. En caso de que `es_resultado` sea *falso* significa que ocurrió un problema (divisor cero) y no fue posible determinar el resultado. Este clase de tipo de estructura Op\_... es práctico en casos donde puedan ocurrir errores.
 :::
 
----
+Si el tipo de una declaración de función tiene el especificador *static*, se está declarando una función visible solo dentro de la unidad de traducción (archivo .c y encabezados) actual. En ese caso la función debe ser definida en la misma unidad de traducción donde fue declarada.
 
-Si el tipo de una declaración de función tiene el especificador *static*, se está declarando una función visible solo dentro de la unidad de traducción (archivo .c y encabezados) actual.
-En ese caso la función debe ser definida en la misma unidad de traducción donde fue declarada.
-
-```{.c filename="Ejemplo"}
+``` c
 static int func1(int a,char b);
 int main(void){
-    return func1(1,3);
+  return func1(1,3);
 }
 static int func1(int a,int b){
-    return (b-a)*(b+a);
+  return (b-a)*(b+a);
 }
 ```
 
-:::{.callout-caution}
+::: callout-caution
 Es un error si termina el archivo sin definir func1.
 :::
 
@@ -1061,22 +1103,18 @@ Es un error si termina el archivo sin definir func1.
 
 En C99 se introdujo un especificador `inline` que indica que el código de la función puede ser "pegado" dentro de otra función en lugar de hacer un llamado. Esto permite evitar la sobrecarga de llamar a una función sencilla.
 
-:::{.callout-tip}
+::: callout-tip
 El compilador de C solo hace la inclusión en línea del código **si está activada la optimización**. Si no está activada la optimización el compilador realizará un llamado normal en su lugar.
 :::
 
----
-
-:::{.callout-important}
+::: callout-important
 Las funciones `inline` invierten las posiciones de la declaración y la implementación. Son implementadas en el encabezado y declaradas en un archivo .c. En el archivo donde son declaradas se genera el código accesible de forma normal (cuando no es insertada en línea).
 
-- Donde originalmente iría la declaración va la implementación calificada por `inline`.
-- Donde originalmente iría la implementación va un declaración calificada por `extern inline`. Esta declaración es especial, indica que en este punto debe compilarse la función de manera normal. Esto es necesario para el uso normal de la función, si se omitiera fallaría el linker si se compila sin optimizar o se llama la función desde un puntero.
+-   Donde originalmente iría la declaración va la implementación calificada por `inline`.
+-   Donde originalmente iría la implementación va un declaración calificada por `extern inline`. Esta declaración es especial, indica que en este punto debe compilarse la función de manera normal. Esto es necesario para el uso normal de la función, si se omitiera fallaría el linker si se compila sin optimizar o se llama la función desde un puntero.
 :::
 
----
-
-```{.c filename="ejemplo.h"}
+``` c
 #ifndef EJEMPLO_H
 #define EJEMPLO_H
 
@@ -1084,16 +1122,16 @@ int fn_normal(int a,int b);
 
 inline int fn_inline(int a,int b)
 {
-    return a-b;
+  return a-b;
 }
 #endif
 ```
 
-```{.c filename="ejemplo.c"}
+``` c
 #include "ejemplo.h" // Este módulo
 
 int fn_normal(int a,int b){
-    return a*b;
+  return a*b;
 }
 
 // En este caso extern es necesario.
@@ -1104,132 +1142,122 @@ extern inline int fn_inline(int a,int b);
 
 Un arreglo es un tipo de datos compuesto que contiene varias instancias del tipo de dato base dispuestas en forma contigua en memoria. El declarador de arreglo es indicado por un par de corchetes a la derecha del resto del declarador. Dentro de los corchetes se indica el número de elementos del arreglo. Un arreglo reserva memoria para todos sus elementos.
 
-```{.c filename="Ejemplo"}
+``` c
   int var1[5], var2[3][2];
   /*
    * El especificador de tipo base es entero (int)
    * var1 es un arreglo de 5 enteros
    * var2 es un arreglo de 3 arreglos de 2 enteros.
-   *      Lo que puede considerarse un arreglo
-   *      bidimensional de 3x2 enteros.
+   *    Lo que puede considerarse un arreglo
+   *    bidimensional de 3x2 enteros.
    */
 ```
----
 
 Disposición en memoria arreglos en el ejemplo
 
 ![Nota: `&x` produce la dirección de `x` y `&x[1]` equivale a `&(x[1])`](memoria_arreglos.png)
 
-
 ## Limitaciones
 
-- No pueden declararse arreglos de funciones (pero sí de punteros a funciones).
-- Una función no puede retornar un tipo arreglo (aunque sí una estructura conteniendo un arreglo).
-- Se puede indicar un arreglo como parámetro de una función, pero en ese caso no se copiará el arreglo por valor sino que se pasará puntero al primer elemento del mismo.
+-   No pueden declararse arreglos de funciones (pero sí de punteros a funciones).
+-   Una función no puede retornar un tipo arreglo (aunque sí una estructura conteniendo un arreglo).
+-   Se puede indicar un arreglo como parámetro de una función, pero en ese caso no se copiará el arreglo por valor sino que se pasará puntero al primer elemento del mismo.
 
 ## Indexado
 
-```{.c filename="Ejemplo"}
+``` c
 int  A[5]={1,2,3,4,5};
 
 int primer_elemento_de_A(void){
-    return A[0]; // Comienza de 0
+  return A[0]; // Comienza de 0
 }
 int segundo_elemento_de_A(void){
-    return A[1];
+  return A[1];
 }
 int * direccion_de_A(void){
-    return A; // Sin corchete!
+  return A; // Sin corchete!
 }
 int * direccion_quinto_elemento_de_A(void){
-    return &A[4];
+  return &A[4];
 }
 ```
 
 ## Arreglos como parámetros de funciones
 
-```{.c}
+``` c
 // Las dos declaraciones son equivalentes
 // Nota: Hay que especificar la longitud!
 uint32_t suma(int n, int numeros[]);
 uint32_t suma(int n, int *numeros);
 // Arreglos de longitud variable (VLA), solo como parámetros o variables automáticas.
 void matmul(int n,int k,int m,
-    int const A[n][k], int const B[k][m], int R[k][m]);
+  int const A[n][k], int const B[k][m], int R[k][m]);
 // Esta forma es equivalente
 void matmul(int n, int k, int m,
-    int const (*A)[k], int const (*B)[m], int (*R)[m])
+  int const (*A)[k], int const (*B)[m], int (*R)[m])
 {
-    for (int fila=0;fila<n;++fila){
-        for (int col=0;col<n;++col){
-            R[fila][col] = 0;
-            for (i=0;i<k;++i){
-                R[fila][col] += A[fila][k]*B[k][col];
-            }
-        }
+  for (int fila=0;fila<n;++fila){
+    for (int col=0;col<n;++col){
+      R[fila][col] = 0;
+      for (i=0;i<k;++i){
+        R[fila][col] += A[fila][k]*B[k][col];
+      }
     }
+  }
 }
 ```
 
----
-
-:::{.callout-caution}
-Los punteros se pueden indexar como si fuesen arreglos, sin embargo **no son arreglos**.  
+::: callout-caution
+Los punteros se pueden indexar como si fuesen arreglos, sin embargo **no son arreglos**.\
 Si un puntero `P` apunta a un arreglo `A` entonces:
 
-**Similitudes**  
-`P` (valor del puntero) es igual a `A` (dirección del arreglo)  
-`P[n]` es equivalente a `A[n]` (tanto para leer como modificar)  
+**Similitudes**\
+`P` (valor del puntero) es igual a `A` (dirección del arreglo)\
+`P[n]` es equivalente a `A[n]` (tanto para leer como modificar)\
 `&P[n]` es igual a `&A[n]`
 
-**Diferencias**  
-`&P` es la dirección en memoria del puntero (`&P != A`).  
-`&A` es la dirección en memoria del arreglo (`&A == &A`).  
-`sizeof P` (tamaño en memoria de P) siempre es el tamaño de un puntero.  
-`sizeof A` (tamaño en memoria de A) es el espacio ocupado por A en memoria.  
-`A` es la **dirección** del arreglo y por lo tanto no puede modificarse.  
+**Diferencias**\
+`&P` es la dirección en memoria del puntero (`&P != A`).\
+`&A` es la dirección en memoria del arreglo (`&A == &A`).\
+`sizeof P` (tamaño en memoria de P) siempre es el tamaño de un puntero.\
+`sizeof A` (tamaño en memoria de A) es el espacio ocupado por A en memoria.\
+`A` es la **dirección** del arreglo y por lo tanto no puede modificarse.\
 `P` es el **valor** del puntero y sí puede modificarse.
 :::
 
----
-
-```{.c filename="Punteros no son arreglos"}
+``` c
 #include <stdio.h>  // puts
 #include <assert.h> // assert
 // assert(x) termina el programa con mensaje de error si x es falso
 int main(void)
 {
-    int A[]={1,2,3,4,5,6,7,8,9,10,11,12};
-    int *B = A;
-    assert(A == B);
-    for (int i=0;i<(sizeof A / sizeof A[0]);++i){
-        assert(A[i] == B[i]);
-        assert(&A[i] == &B[i]);
-    }
-    assert(&A != &B);
-    assert(sizeof A != sizeof B);
-    puts("Todas las pruebas pasadas!\n");
-    return 0;
+  int A[]={1,2,3,4,5,6,7,8,9,10,11,12};
+  int *B = A;
+  assert(A == B);
+  for (int i=0;i<(sizeof A / sizeof A[0]);++i){
+    assert(A[i] == B[i]);
+    assert(&A[i] == &B[i]);
+  }
+  assert(&A != &B);
+  assert(sizeof A != sizeof B);
+  puts("Todas las pruebas pasadas!\n");
+  return 0;
 }
 ```
 
-:::{.callout-note}
+::: callout-note
 Puedes ejecutar una versión de este ejemplo [aquí](https://onlinegdb.com/bJpZAEn_w).
 :::
 
----
-
-## Punteros
+## Punteros {#sec-punteros}
 
 Un puntero es un tipo derivado cuyo valor es una dirección de memoria que, a su vez, contiene un objeto del tipo base. El tipo base puede ser cualquier otro tipo.
 
-:::{.callout-caution}
+::: callout-caution
 El tipo puntero se indica con un asterisco a la izquierda del identificador. Debido a la precedencia de operaciones, el asterisco se procesa *después* que los paréntesis y los corchetes que indican los tipos función y arreglo respectivamente. En estos casos deben usarse paréntesis para forzar que se evalúe primero el indicador de puntero.
 :::
 
----
-
-```{.c filename="Ejemplos"}
+``` c
 int x=5, *a=&x, **b=&a, ***c=&b;
 /* x es una variable entero
  * a es una variable puntero a entero
@@ -1241,146 +1269,134 @@ int x=5, *a=&x, **b=&a, ***c=&b;
  // y es un puntero a arreglo de cuatro enteros.
 ```
 
-:::{.callout-tip}
+::: callout-tip
 Notar en el ejemplo la diferencia entre x e y. La variable x almacena cuatro punteros a entero, mientras que y es un puntero a un arreglo de seis enteros.
 
-`x[0]` es un puntero a entero.  
+`x[0]` es un puntero a entero.\
 `y[0]` es un arreglo de 4 enteros.
 
 La variable x contiene 4 punteros, por tanto su tamaño en memoria es el cuádruple de la variable y.
 :::
 
-## Interpretando declaraciones complejas
+## Interpretando declaraciones complejas {#sec-interpretacion-declaraciones}
 
 Para interpretar una declaración compleja comenzar por el *identificador* (nombre de lo que se está declarando) considerar primero lo que hay a su derecha, luego lo que hay a su izquierda. Cada vez que se resuelva una declaración entre paréntesis considerar nuevamente derecha, luego izquierda.
 
 Al evaluar cada parámetro de una decalración de función se procede de la misma manera.
 
----
-
-```{.c}
+``` c
 int const *A(int,int);
 ```
 
-:::{.callout}
-Identificador: `A` → *`A` es...*  
-Derecha: `(int,int)` →  *...una función con dos parámetros enteros...*  
-Izquierda: `*` → *...que retorna un puntero a...*  
+::: callout
+Identificador: `A` → *`A` es...*\
+Derecha: `(int,int)` → *...una función con dos parámetros enteros...*\
+Izquierda: `*` → *...que retorna un puntero a...*\
 Izquierda: `int const` → *...entero con signo de solo lectura.*
 :::
 
-:::{.callout-tip}
-Los calificadores `const` y `volatile` pueden ir a izquierda o derecha de un tipo base.  
+::: callout-tip
+Los calificadores `const` y `volatile` pueden ir a izquierda o derecha de un tipo base.\
 Pero **si califican un puntero deben ir siempre a la derecha del asterisco**.
 
 Si siempre se ponen a la derecha de lo que califican es más dificil confundirse.
 :::
 
----
-
-```{.c}
+``` c
 int const (*B(int,int))[9][3];
 ```
 
-:::{.callout}
-Identificador: `B` → *`B` es...*   
-Derecha: `(int,int)` → *...una función con dos argumentos enteros...*  
-Izquierda: `*` → *...que retorna un puntero a...*  
-Fuera de los paréntesis:  
-Derecha: `[9]` → *...un arreglo de nueve...*    
-Continuando derecha `[3]` → *...arreglos de tres...*  
+::: callout
+Identificador: `B` → *`B` es...*\
+Derecha: `(int,int)` → *...una función con dos argumentos enteros...*\
+Izquierda: `*` → *...que retorna un puntero a...*\
+Fuera de los paréntesis:\
+Derecha: `[9]` → *...un arreglo de nueve...*\
+Continuando derecha `[3]` → *...arreglos de tres...*\
 Izquierda: `int` → *...enteros con signo.*
 :::
 
----
-
-```{.c}
+``` c
 void (* const ivecs[16])(void) = {fn0,..,fn15};
 ```
 
-:::{.callout}
-Identificador: `ivecs` → *`ivecs` es...*  
-Derecha: `[16]` → *...un arreglo de dieciseis...*  
-Izquieda: `* const` → *...punteros constantes a...*  
-Fuera de los paréntesis:  
-Derecha: `(void)` → *...funciones que no aceptan argumentos...*  
+::: callout
+Identificador: `ivecs` → *`ivecs` es...*\
+Derecha: `[16]` → *...un arreglo de dieciseis...*\
+Izquieda: `* const` → *...punteros constantes a...*\
+Fuera de los paréntesis:\
+Derecha: `(void)` → *...funciones que no aceptan argumentos...*\
 Izquieda: `void` → *...y no retornan valor.*
 :::
 
-:::{.callout-important}
+::: callout-important
 Las variables de solo lectura (de tipo calificado por `const`) deben ser inicializadas en su definición (declaración que reserva la memoria).
 :::
 
-:::{.callout-tip}
+::: callout-tip
 En "`int const *A;`" la variable `A` no es calificada por `const`, sino la posición de memoria a la que apunta. Por eso no hace falta inicializarla al definir.
 :::
 
----
-
-```{.c}
+``` c
 void (*const suma)(Vector const *self,const Vector *otro, Vector *resultado) = misuma;
 ```
 
-:::{.callout}
-Identificador: `suma` → *`suma` es...*  
-Izquierda: `*const` → *...un puntero constante a...*  
-Fuera de los paréntesis:  
-Derecha: `(Vector const *self,const Vector *otro, Vector *resultado)`  
-→ *...función que acepta tres argumentos: dos punteros a constante tipo Vector (self y otro) y un puntero a tipo Vector (resultado); ...*   
+::: callout
+Identificador: `suma` → *`suma` es...*\
+Izquierda: `*const` → *...un puntero constante a...*\
+Fuera de los paréntesis:\
+Derecha: `(Vector const *self,const Vector *otro, Vector *resultado)`\
+→ *...función que acepta tres argumentos: dos punteros a constante tipo Vector (self y otro) y un puntero a tipo Vector (resultado); ...*\
 Izquierda: `void` → *...y no retorna valor.*
 :::
 
-:::{.callout-important}
+::: callout-important
 Como `suma` es un tipo ***calificado constante***, debe ser inicializada al momento de su declaración.
 :::
 
----
-
-```{.c}
+``` c
 struct Pin_VT{
-    void (*const modo_salida)(Pin *);
-    void (*const modo_entrada)(Pin *);
-    void (*const set_estado)(Pin *,bool);
-    bool (*const get_estado)(Pin *);
-    bool (*const get_entrada)(Pin *);
+  void (*const modo_salida)(Pin *);
+  void (*const modo_entrada)(Pin *);
+  void (*const set_estado)(Pin *,bool);
+  bool (*const get_estado)(Pin *);
+  bool (*const get_entrada)(Pin *);
 };
 ```
 
-:::{.callout}
-No hay identificador → *No declara ningún objeto, ...*  
-Izquierda: `struct Pin_VT{...}` → *...pero define una estructura de etiqueta `Pin_VT` cuyos miembros son: `modo_salida` y `modo_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y no retorna valor; `set_estado`, un puntero constante a función que acepta un argumento puntero a `Pin`, un argumento tipo `bool` y no retorna valor; `get_estado` y `get_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y retorna un valor tipo `bool`.* 
+::: callout
+No hay identificador → *No declara ningún objeto, ...*\
+Izquierda: `struct Pin_VT{...}` → *...pero define una estructura de etiqueta `Pin_VT` cuyos miembros son: `modo_salida` y `modo_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y no retorna valor; `set_estado`, un puntero constante a función que acepta un argumento puntero a `Pin`, un argumento tipo `bool` y no retorna valor; `get_estado` y `get_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y retorna un valor tipo `bool`.*
 :::
 
----
-
-```{.c}
+``` c
 typedef enum {
-    PIN_IN_ANALOGICO = 0b0000,
-    PIN_IN_FLOTANTE  = 0b0100,
-    PIN_IN_CON_PULL  = 0b1000,
-    PIN_OUT_LENTO    = 0b0010,
-    PIN_OUT_MEDIO    = 0b0001,
-    PIN_OUT_RAPIDO   = 0b0011,
-    PIN_OUT_OD_LENTO = 0b0110,
-    PIN_OUT_OD_MEDIO = 0b0101,
-    PIN_OUT_OD_RAPIDO= 0b0111,
-    PIN_AFO_LENTO    = 0b1010,
-    PIN_AFO_MEDIO    = 0b1001,
-    PIN_AFO_RAPIDO   = 0b1011,
-    PIN_AFO_OD_LENTO = 0b1110,
-    PIN_AFO_OD_MEDIO = 0b1101,
-    PIN_AFO_OD_RAPIDO= 0b1111
+  PIN_IN_ANALOGICO = 0b0000,
+  PIN_IN_FLOTANTE  = 0b0100,
+  PIN_IN_CON_PULL  = 0b1000,
+  PIN_OUT_LENTO  = 0b0010,
+  PIN_OUT_MEDIO  = 0b0001,
+  PIN_OUT_RAPIDO   = 0b0011,
+  PIN_OUT_OD_LENTO = 0b0110,
+  PIN_OUT_OD_MEDIO = 0b0101,
+  PIN_OUT_OD_RAPIDO= 0b0111,
+  PIN_AFO_LENTO  = 0b1010,
+  PIN_AFO_MEDIO  = 0b1001,
+  PIN_AFO_RAPIDO   = 0b1011,
+  PIN_AFO_OD_LENTO = 0b1110,
+  PIN_AFO_OD_MEDIO = 0b1101,
+  PIN_AFO_OD_RAPIDO= 0b1111
 } ModoEntrada;
 ```
 
-:::{.callout}
-Identificador `ModoEntada` → *`ModoEntrada` es...*  
+::: callout
+Identificador `ModoEntada` → *`ModoEntrada` es...*\
 Izquierda: `typedef enum {...}` → *un tipo definido por el usuario, equivalente a la enumeración anónima especificada (además, se definen las correspondientes constantes).*
 :::
 
 ## Inicializadores de arreglos y estructuras
 
-```{.c filename="Inicializadores"}
+``` c
 typedef struct MiStruct {int a;int b;int c;} MiStruct;
 typedef union MiUnion {char b[4];short h[2];long w;} MiUnion;
 // Lista de inicialización
@@ -1389,7 +1405,7 @@ int arreglo_2[8] = {1,2,3,4}; // Los miembros no especificados se inicializan en
 int arreglo_3[][3] = {{1,2},{1,3,4}}; // Solo puede omitirse la primera dimensión
 char arreglo4[] = "ABC"; // equivale a {'A','B','C','0'}
 MiStruct estructura_1 = {3,5,7}; // a=3, b=5, c=7
-MiStruct estructura_2 = {1};     // a=1, b=0, c=0
+MiStruct estructura_2 = {1};   // a=1, b=0, c=0
 MiUnion  union_1 = {{1,2,3,4}};  // En una unión solo puede inicializarse así el primer miembro
 // Inicializador con designación
 // inicializa {3,4,0,0,0,23,24,0,-4,0,0,0,0,0,0}
@@ -1412,15 +1428,11 @@ MiUnion union_4 = {.b={[2]=5,7}};
 
 Los literales compuestos crean objetos de tipo estructura, unión o arreglo. Para crearlos se especifica el tipo entre paréntesis y se ubica a continuación un inicializador con designación.
 
-:::{.callout-warning}
-Los objetos creados por los literales compuestos **solo son válidos en el ámbito donde fueron creados**. Corresponden a variables automáticas anónimas si fueron creados dentro de un bloque de código y variables static si fueron creados en el ámbito de archivo (fuera de una función).
-En particular no se debe retornar nunca la dirección de un objeto automático (variable local), pues la memoria es liberada al salir del bloque donde fue reservada.
-Lo que sí se puede retornar es **el valor** de un literal compuesto tipo estructura o unión.
+::: callout-warning
+Los objetos creados por los literales compuestos **solo son válidos en el ámbito donde fueron creados**. Corresponden a variables automáticas anónimas si fueron creados dentro de un bloque de código y variables static si fueron creados en el ámbito de archivo (fuera de una función). En particular no se debe retornar nunca la dirección de un objeto automático (variable local), pues la memoria es liberada al salir del bloque donde fue reservada. Lo que sí se puede retornar es **el valor** de un literal compuesto tipo estructura o unión.
 :::
 
-----
-
-```{.c}
+``` c
 #include <assert.h>
 typedef struct {char nombre[20];char apellido[20];int edad;} Ficha;
 int posicion_maximo(int n,int const *b);
@@ -1429,27 +1441,27 @@ int posicion_maximo(int n,int const *b);
 void muestra_ficha(Ficha const *ficha);
 typedef struct Vec2D {int x;int y;} Vec2D;
 Vec2D ejemplo(void){
-    int i;
-    // Equivale a crear una variable local tipo arreglo a 8 enteros, inicializada con {[3]=5,6,4} 
-    // y pasarla como parámetro a posicion_maximo
-    i = posicion_maximo(8,(int[8]){[3]=5,6,4});
-    assert(4 == i);
-    // Equivale a crear una variable local de solo lectura de tipo Ficha, inicializada con el
-    // inicializador designado {...}, y pasar su dirección como argumento a muestra_ficha.
-    // NOTA: La dirección de memoria se volverá inválida al salir de main (pues la memoria es liberada)
-    // Por lo tanto, muestra_ficha *NO PUEDE ALMACENAR EN NINGUN LADO LA DIRECCION DE MEMORIA PASADA*
-    // Esta acción es, por lo tanto, INSEGURA. Si muestra_ficha guardara la dirección por ejemplo en una
-    // variable estáticoa, eso sería un puntero inválido (llamado dangling pointer)
-    muestra_ficha(&(Ficha const){
-        .nombre = "Juan",
-        .apellido = "Perez",
-        .edad = 20});
-    // Equivale a crear una variable Vec2D local y
-    // retornar su VALOR. Es por lo tanto correcto (no
-    // retorna la dirección de memoria sino el valor).
-    // Se sugiere usar esto solo cuando es absolutamente
-    // claro.
-    return (Vec2D){5,3};
+  int i;
+  // Equivale a crear una variable local tipo arreglo a 8 enteros, inicializada con {[3]=5,6,4} 
+  // y pasarla como parámetro a posicion_maximo
+  i = posicion_maximo(8,(int[8]){[3]=5,6,4});
+  assert(4 == i);
+  // Equivale a crear una variable local de solo lectura de tipo Ficha, inicializada con el
+  // inicializador designado {...}, y pasar su dirección como argumento a muestra_ficha.
+  // NOTA: La dirección de memoria se volverá inválida al salir de main (pues la memoria es liberada)
+  // Por lo tanto, muestra_ficha *NO PUEDE ALMACENAR EN NINGUN LADO LA DIRECCION DE MEMORIA PASADA*
+  // Esta acción es, por lo tanto, INSEGURA. Si muestra_ficha guardara la dirección por ejemplo en una
+  // variable estáticoa, eso sería un puntero inválido (llamado dangling pointer)
+  muestra_ficha(&(Ficha const){
+    .nombre = "Juan",
+    .apellido = "Perez",
+    .edad = 20});
+  // Equivale a crear una variable Vec2D local y
+  // retornar su VALOR. Es por lo tanto correcto (no
+  // retorna la dirección de memoria sino el valor).
+  // Se sugiere usar esto solo cuando es absolutamente
+  // claro.
+  return (Vec2D){5,3};
 }
 ```
 
@@ -1457,23 +1469,21 @@ Vec2D ejemplo(void){
 
 De la misma forma que en matemática, en C una expresión es una secuencia de operadores y operandos que indica un cómputo. Ahora bien, en C las operaciones pueden tener efectos secundarios y produce un valor que tiene un tipo y pertenece a una categoría de valor.
 
----
-
-:::{.callout-note}
+::: callout-note
 Las categorías de valor son:
 
-- Objetos en memoria, llamados `lvalue` (viene de *left value*, valor izquierdo, por razones históricas). Pueden ser de solo lectura o modificables (usando operadores de asignación, asignación compuesta o incremento).
-- Valores (llamados `rvalue`), son los valores suceptibles de almacenarse en memoria (en un `lvalue` modificable, mediante operador de asignación), pasarse como argumentos, usarse para efectuar una decisión en una estructura de control o descartarse. Un caso especial de rvalue es el de tipo `void`, que significa que no hay un valor (y no puede hacerse de el ningún uso salvo descartarlo).
-- Designadores de función. A esta categoría pertenece un identificador que designa una función.
+-   Objetos en memoria, llamados `lvalue` (viene de *left value*, valor izquierdo, por razones históricas). Pueden ser de solo lectura o modificables (usando operadores de asignación, asignación compuesta o incremento).
+-   Valores (llamados `rvalue`), son los valores suceptibles de almacenarse en memoria (en un `lvalue` modificable, mediante operador de asignación), pasarse como argumentos, usarse para efectuar una decisión en una estructura de control o descartarse. Un caso especial de rvalue es el de tipo `void`, que significa que no hay un valor (y no puede hacerse de el ningún uso salvo descartarlo).
+-   Designadores de función. A esta categoría pertenece un identificador que designa una función.
 :::
 
 ## Paréntesis de agrupamiento
 
 Las expresiones entre paréntesis son evaluadas en primer lugar. Los paréntesis de agrupamiento pueden identificarse pues ocupan el lugar que ocuparía un operando (un número, por ejemplo). Usar paréntesis explícitos siempre que no sea absolutamente claro el orden de operaciones.
 
-```{.c filename="Ejemplo"}
+``` c
 int main(void){
-    return (3+7)*(8-4)+(1 << (3+2));
+  return (3+7)*(8-4)+(1 << (3+2));
 }
 ```
 
@@ -1481,22 +1491,22 @@ int main(void){
 
 Los operadores unarios tienen un solo operando. Pueden ubicarse a la derecha del operando (sufijos) o a su izquierda (prefijos).
 
-```{.c filename="Ejemplo"}
+``` c
 int f1(int a,int b){
-    // '-' en este contexto es el
-    // operador unario prefijo
-    // negativo (complemento a 2)
-    return -a * -b;
+  // '-' en este contexto es el
+  // operador unario prefijo
+  // negativo (complemento a 2)
+  return -a * -b;
 }
 typedef struct Pila{
-    int mem[128];
-    int sp;
+  int mem[128];
+  int sp;
 }Pila;
 void push(int valor,Pila * pila){
-    assert(pila->sp>0);
-    // '--' es el operador unario
-    // Post-incremento
-    pila->mem[pila->sp--]=valor;    
+  assert(pila->sp>0);
+  // '--' es el operador unario
+  // Post-incremento
+  pila->mem[pila->sp--]=valor;  
 }
 ```
 
@@ -1504,14 +1514,14 @@ void push(int valor,Pila * pila){
 
 Los operadores binarios se ubican en medio de sus operandos.
 
-```{.c filename="Ejemplo"}
+``` c
 struct s1{int a,int b};
 int suma(struct s1 args){
-    // '.' es el operador binario
-    // acceso a miembro.
-    // '+' es el operador binario
-    // suma.
-    return args.a+args.b;
+  // '.' es el operador binario
+  // acceso a miembro.
+  // '+' es el operador binario
+  // suma.
+  return args.a+args.b;
 }
 ```
 
@@ -1519,7 +1529,7 @@ int suma(struct s1 args){
 
 La precedencia indica el orden en el que se realizan las operaciones, por ejemplo el producto se realiza antes de la suma. En C hay 15 niveles de precedencia.
 
-:::{.callout-caution}
+::: callout-caution
 Algunas reglas de precedencia de C se prestan a confusión. En esos casos es **muy recomendable** usar paréntesis para indicar explícitamente el orden de operaciones.
 :::
 
@@ -1527,47 +1537,43 @@ Algunas reglas de precedencia de C se prestan a confusión. En esos casos es **m
 
 La asociatividad indica como se procesan varios operadores de la misma precedencia. Puede ser izquierda a derecha o derecha a izquierda.
 
-:::{.callout-caution}
+::: callout-caution
 La asociatividad puede a veces no ser intuitiva. Se recomienda usar paréntesis para indicar el orden de operación siempre que no sea inmediatamente claro.
 :::
-
----
 
 ### Izquierda a derecha
 
 Si hay tres o más operandos, se procesan primero las operaciones a la izquierda.
 
-```{.c}
+``` c
 #include <stdio.h>
 #include <assert.h>
 int main(void){
-    int a,b;
-    a = 7*2/3*5;
-    // equivale a 
-    b = ((7*2)/3)*5;
-    assert(a == b);
-    puts("No falla\n");
-    return 0;
+  int a,b;
+  a = 7*2/3*5;
+  // equivale a 
+  b = ((7*2)/3)*5;
+  assert(a == b);
+  puts("No falla\n");
+  return 0;
 }
-``` 
-
-----
+```
 
 ### Derecha a izquierda
 
 Si hay tres o más operandos, se procesan primero las operaciones a la derecha.
 
-```{.c}
+``` c
 #include <stdio.h>
 #include <assert.h>
 int main(void){
-    int a1=8,b1,c1;
-    int a2=8,b2,c2;
-    c1=a1+=b1=5;
-    c2=(a2+=(b2=5));
-    assert((a1==a2)&&(b1==b2)&&(c1==c2));
-    printf("a: %d, b: %d, c: %d\n",a1,b1,c1); // a: 13, b: 5, c: 13
-    return 0;
+  int a1=8,b1,c1;
+  int a2=8,b2,c2;
+  c1=a1+=b1=5;
+  c2=(a2+=(b2=5));
+  assert((a1==a2)&&(b1==b2)&&(c1==c2));
+  printf("a: %d, b: %d, c: %d\n",a1,b1,c1); // a: 13, b: 5, c: 13
+  return 0;
 }
 ```
 
@@ -1577,47 +1583,44 @@ Son los operadores de post-incremento, post-decremento, llamado a función, dire
 
 ### 
 
-
-:::{.callout-note}
+::: callout-note
 La asociatividad de estos operadores es de ***izquierda a derecha***.
 :::
 
-----
-
-```{.c}
+``` c
 #include <stdio.h>
 #include <assert.h>
 
 typedef struct Nodo Nodo;
 struct Nodo {
-    int valor;
-    Nodo *izq;
-    Nodo *der;
+  int valor;
+  Nodo *izq;
+  Nodo *der;
 };
 int main(void){
-    int x=0,y=3,u,v;
-    Nodo nodos[4]={0}, *pnodo;
-    // Post incremento/post decremento
-    u = x++;
-    v = y--;
-    // Llamado a función
-    printf("x: %d, y: %d, u: %d, v: %d",x,y,u,v);
-    assert((x == 1) && (y == 2) && (u == 0) && (v == 3));
-    // Indexado, literal compuesto
-    nodos[0]=(Nodo){.valor=x};
-    nodos[1]=(Nodo){.valor=y};
-    // Indexado, acceso a miembro
-    nodos[2].valor=u;
-    nodos[3].valor=v;
-    pnodo = &nodos[3];
-    // Acceso a miembro por puntero
-    pnodo->izq = &nodos[0];
-    pnodo->izq->izq = &nodos[2];
-    pnodo->izq->der = &nodos[1];
-    assert(pnodo->izq->valor < pnodo->valor);
-    assert(pnodo->izq->izq->valor < pnodo->izq->valor);
-    assert(pnodo->izq->valor < pnodo->izq->der->valor);
-    return 0;
+  int x=0,y=3,u,v;
+  Nodo nodos[4]={0}, *pnodo;
+  // Post incremento/post decremento
+  u = x++;
+  v = y--;
+  // Llamado a función
+  printf("x: %d, y: %d, u: %d, v: %d",x,y,u,v);
+  assert((x == 1) && (y == 2) && (u == 0) && (v == 3));
+  // Indexado, literal compuesto
+  nodos[0]=(Nodo){.valor=x};
+  nodos[1]=(Nodo){.valor=y};
+  // Indexado, acceso a miembro
+  nodos[2].valor=u;
+  nodos[3].valor=v;
+  pnodo = &nodos[3];
+  // Acceso a miembro por puntero
+  pnodo->izq = &nodos[0];
+  pnodo->izq->izq = &nodos[2];
+  pnodo->izq->der = &nodos[1];
+  assert(pnodo->izq->valor < pnodo->valor);
+  assert(pnodo->izq->izq->valor < pnodo->izq->valor);
+  assert(pnodo->izq->valor < pnodo->izq->der->valor);
+  return 0;
 }
 ```
 
@@ -1625,45 +1628,43 @@ int main(void){
 
 Son operadores de pre-incremento, pre-decremento, signos positivo y negativo, NOT booleano, NOT bit a bit, conversión de tipo, indirección (acceso al destino de un puntero), dirección (dirección de memoria de un objeto) y sizeof (tamaño de un objeto).
 
-:::{.callout-note}
+::: callout-note
 La asociatividad de estos operadores es de ***derecha a izquierda***.
 :::
 
----
-
-```{.c}
+``` c
 #include <assert.h>
 #include <stdint.h>
 int main(void){
-    int x=0,y=3,u,v;
-    int a,b,c;
-    uint16_t d;
-    int *p1, *p2, **p3;
-    // Pre incremento/post decremento
-    u = ++x;
-    v = --y;
-    assert((u == x) && (v == y));
-    // Positivo y negativo
-    // NOTAR LOS ESPACIOS...
-    a = - - 3;
-    b = + - 3;
-    assert(a == -b);
-    // NO lógico (booleano)
-    c = !!4;
-    assert(c == 1);
-    // No bit a bit, conversión de tipo
-    d = (uint16_t)~0xF00FU;
-    assert(d == (uint16_t)0x0FF0U);
-    // operador dirección de...
-    p1 = &a;
-    p2 = &b;
-    // operador indirección (contenido de...)
-    *p1 = -9;
-    assert((a == -9) && (*p2 == -3));
-    // operador sizeof (tamaño de)
-    assert(sizeof d == 2 );
-    p3 = &p2;
-    assert(**p3 == -3);
-    return 0;
+  int x=0,y=3,u,v;
+  int a,b,c;
+  uint16_t d;
+  int *p1, *p2, **p3;
+  // Pre incremento/post decremento
+  u = ++x;
+  v = --y;
+  assert((u == x) && (v == y));
+  // Positivo y negativo
+  // NOTAR LOS ESPACIOS...
+  a = - - 3;
+  b = + - 3;
+  assert(a == -b);
+  // NO lógico (booleano)
+  c = !!4;
+  assert(c == 1);
+  // No bit a bit, conversión de tipo
+  d = (uint16_t)~0xF00FU;
+  assert(d == (uint16_t)0x0FF0U);
+  // operador dirección de...
+  p1 = &a;
+  p2 = &b;
+  // operador indirección (contenido de...)
+  *p1 = -9;
+  assert((a == -9) && (*p2 == -3));
+  // operador sizeof (tamaño de)
+  assert(sizeof d == 2 );
+  p3 = &p2;
+  assert(**p3 == -3);
+  return 0;
 }
 ```
