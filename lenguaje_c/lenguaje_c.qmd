@@ -1106,7 +1106,9 @@ struct Estructura var4;
  }
 ```
 ::::
+:::
 
+:::{.callout appearance="minimal"}
 ::::{#lst-ejemplo-struct-por-valor lst-cap="Estructuras: pasaje por valor e inicializadores"}
 ```{.c}
 typedef struct Punto{
@@ -1128,7 +1130,9 @@ int main(void){
 }
 ```
 ::::
+:::
 
+:::{.callout appearance="minimal"}
 ::::{#lst-ejemplo-struct-por-ref lst-cap="Estructuras: pasaje por referencia"}
 ```{.c}
 typedef struct MiEstado{
@@ -1159,8 +1163,10 @@ Un tipo union es un tipo que puede contener valores de otros tipos, pero solo un
 
 `union {int a,char b,long long c} mivar;`
 
-reserva memoria para el más grande entre a,b y c. Puede contener a **o** b **o** c, pero **solo uno por vez**. Al usar uniones lo mejor es ubicarlas dentro de estructuras donde otro miembro determine *cual de los valores es contenido*.
+reserva memoria para el más grande entre a,b y c. Puede contener a **o** b **o** c, pero **solo uno por vez**. Al usar uniones lo mejor es ubicarlas dentro de estructuras donde otro miembro determine *cual de los valores es contenido*. El @lst-variant-union muestra un ejemplo de union asociada a un identificador de tipo.
 
+:::{.callout appearance="minimal"}
+::::{#lst-variant-union lst-cap="Union e identificador de tipo"}
 ``` c
 typedef struct Var{
   enum {ERROR,NUM_16,NUM_32,NUM_64} tipo;
@@ -1174,9 +1180,7 @@ typedef struct Var{
     int64_t v64;
   };
 } Var;
-```
 
-``` c
 Var recibe_elemento(void){
   Var r;
   recibe_bytes(sizeof(r.tipo),&r.tipo);
@@ -1196,6 +1200,8 @@ Var recibe_elemento(void){
   return r;
 }
 ```
+::::
+:::
 
 ## Tipo función
 
@@ -1207,32 +1213,49 @@ En el caso de las funciones inline (para las cuales el compilador puede insertar
 
 ## Declaración de funciones
 
-El tipo función es una clase de tipo derivado, donde el tipo base identifica el tipo retornado por la función, y además se especifican otros tipos que corresponden a los argumentos de la función. Un declarador de función se construye ubicando una lista de argumentos entre paréntesis a la derecha del identificador. Si una función no retorna valor su tipo base debe ser *void*. Y si no acepta argumentos la lista de argumentos debe contener solo uno, de tipo *void*.
+El tipo función es una clase de tipo derivado, donde el tipo base identifica el tipo retornado por la función, y además se especifican otros tipos que corresponden a los argumentos de la función. Un declarador de función se construye ubicando una lista de argumentos entre paréntesis a la derecha del identificador. Si una función no retorna valor su tipo base debe ser *void*. Y si no acepta argumentos la lista de argumentos debe contener solo uno, de tipo *void*. El @lst-declaracion-de-funciones muestra ejemplos de declaración de funciones. El @lst-declara-fn-retorna-struct muestra un ejemplo de declaración de función que retorna un valor tipo *struct*. Una función no puede retornar un valor arreglo, pero sí *struct* (y un *struct* puede contener un arreglo). No es recomendable retornar valores *struct* grandes puesto que deben pasarse en la pila de llamados y puede dar lugar a un desborde de pila, sobre todo en sistemas embebidos donde no hay grandes cantidades de RAM.
 
 ::: callout-note
 En este curso trataremos la declaración de funciones moderna, correspondiente a C99 y posterior. La forma histórica sigue siendo soportada pero no es recomendable.
 :::
 
+:::{.callout appearance="minimal"}
+::::{#lst-declaracion-de-funciones lst-cap="Ejemplos de delaración de funciones"}
 ``` c
+/*
+ * Declaración (llamada prototipo) de función de dos argumentos enteros que
+ * retorna un entero (el tipo base es el tipo del valor retornado).
+ * Notar la claridad adicional que brinda el incluir los nombres de los
+ * argumentos y elegir bien el nombre de la funcion
+ */
+int depositaEnCuenta(int idCuenta, int cantidad);
+/* 
+ * Declaración de múltiples funciones con el mismo tipo base y sin dar nombre a
+ * los argumentos (VÁLIDO PERO NO RECOMENDADO)
+ */
   int f1(void), f2(int,int);
 /*─── ────────  ─────────── 
- * ↑  ↑     ↑
- * │  │     └ Declarador de función que
- * │  │       acepta dos argumentos enteros
- * │  │       y retorna un valor entero
- * │  │
- * │  └──── Declarador de función que no acepta
- * │    argumentos y retorna un valor entero
+ * ↑      ↑          ↑
+ * │      │          └ Declarador de función que
+ * │      │            acepta dos argumentos enteros
+ * │      │            y retorna un valor entero
+ * │      │
+ * │      └──── Declarador de función que no acepta
+ * │        argumentos y retorna un valor entero
  * │
  * └───── Tipo base entero, determina el tipo de
  *    valor retornado.
  */
 ```
-
-::: callout-note
-Si bien este ejemplo declara dos funciones en con el mismo especificador de tipo base, es conveniente por claridad declarar cada función por separado.
+::::
 :::
 
+::: callout-note
+Si bien el @lst-declaracion-de-funciones declara dos funciones en con el mismo especificador de tipo base, es conveniente por claridad declarar cada función por separado.
+:::
+
+:::{.callout appearance="minimal"}
+::::{#lst-declara-fn-retorna-struct lst-cap="Declaración de función que retorna valor *struct*"}
 ``` c
 typedef struct Opc_ResultadoDiv{
   bool es_resultado;
@@ -1248,13 +1271,17 @@ Opc_ResultadoDiv dividir(int numerador,int denominador);
  * recomendable por claridad
  */
 ```
-
-::: callout-note
-El tipo `Opc_ResultadoDiv` comienza su nombre por Opc\_ por *opcional*. En caso de que `es_resultado` sea *falso* significa que ocurrió un problema (divisor cero) y no fue posible determinar el resultado. Este clase de tipo de estructura Op\_... es práctico en casos donde puedan ocurrir errores.
+::::
 :::
 
-Si el tipo de una declaración de función tiene el especificador *static*, se está declarando una función visible solo dentro de la unidad de traducción (archivo .c y encabezados) actual. En ese caso la función debe ser definida en la misma unidad de traducción donde fue declarada.
+::: callout-note
+En el @lst-declara-fn-retorna-struct, el tipo `Opc_ResultadoDiv` comienza su nombre por Opc\_ por *opcional*. En caso de que `es_resultado` sea *falso* significa que ocurrió un problema (divisor cero) y no fue posible determinar el resultado. Este clase de tipo de estructura Op\_... es práctico en casos donde puedan ocurrir errores.
+:::
 
+Si el tipo de una declaración de función tiene el especificador *static*, se está declarando una función visible solo dentro de la unidad de traducción (archivo .c y encabezados) actual (llamado *vinculación local*). En ese caso la función debe ser definida en la misma unidad de traducción donde fue declarada. El @lst-declara-fn-static muestra un ejemplo de declaración de función con *vinculación local*. Tener en cuenta que la función debe ser definida en la misma unidad de traducción donde fue declarada.
+
+:::{.callout appearance="minimal"}
+::::{#lst-declara-fn-static lst-cap="Declaración de función con *vinculación local* (*static*)"}
 ``` c
 static int func1(int a,char b);
 int main(void){
@@ -1264,17 +1291,19 @@ static int func1(int a,int b){
   return (b-a)*(b+a);
 }
 ```
+::::
+:::
 
 ::: callout-caution
-Es un error si termina el archivo sin definir func1.
+En el @lst-declara-fn-static sería un error si termina el archivo sin definir func1.
 :::
 
 ## Funciones inline
 
-En C99 se introdujo un especificador `inline` que indica que el código de la función puede ser "pegado" dentro de otra función en lugar de hacer un llamado. Esto permite evitar la sobrecarga de llamar a una función sencilla.
+En C99 se introdujo un especificador `inline` que indica que el código de la función puede ser "pegado" dentro de otra función en lugar de hacer un llamado. Esto permite evitar la sobrecarga de llamar a una función sencilla. El @lst-declaracion-implementacion-fn-inline muestra un ejemplo de función inline.
 
 ::: callout-tip
-El compilador de C solo hace la inclusión en línea del código **si está activada la optimización**. Si no está activada la optimización el compilador realizará un llamado normal en su lugar.
+El compilador de C solo hace la inclusión en línea del código **si está activada la optimización**. Si no está activada la optimización (en GCC si se usara la opción -O0 o -fno-inline) el compilador realizará un llamado normal en su lugar. En GCC las opciones -finline-functions y -finline-small-functions por ejemplo instruyen al compilador que considere todas las funciones o las funciones pequeñas (comparables al espacio ocupado para llamarlas) como si fuesen declaradas *inline* y las inserte cuando tenga la definición antes del llamado, siempre que no exceda ciertas métricas internas del compilador (para evitar un crecimiento excesivo del espacio ocupado).
 :::
 
 ::: callout-important
@@ -1284,6 +1313,9 @@ Las funciones `inline` invierten las posiciones de la declaración y la implemen
 -   Donde originalmente iría la implementación va un declaración calificada por `extern inline`. Esta declaración es especial, indica que en este punto debe compilarse la función de manera normal. Esto es necesario para el uso normal de la función, si se omitiera fallaría el linker si se compila sin optimizar o se llama la función desde un puntero.
 :::
 
+:::{.callout appearance="minimal"}
+::::{#lst-declaracion-implementacion-fn-inline lst-cap="Declaración e implementación de función *inline*"}
+*ejemplo.h*
 ``` c
 #ifndef EJEMPLO_H
 #define EJEMPLO_H
@@ -1296,7 +1328,7 @@ inline int fn_inline(int a,int b)
 }
 #endif
 ```
-
+*ejemplo.c*
 ``` c
 #include "ejemplo.h" // Este módulo
 
@@ -1307,11 +1339,58 @@ int fn_normal(int a,int b){
 // En este caso extern es necesario.
 extern inline int fn_inline(int a,int b);
 ```
+::::
+:::
+
+Puede forzarse al compilador a incluir en línea siempre una determinada función. Esto no es una característica estándar pero está presente en la mayoría de los compiladores. En el caso de GCC debe utilizarse el atributo `__always_inline__`. El @lst-declaracion-fn-always-inline muestra un ejemplo de función que *siempre que sea posible* es incluida en línea en GCC.
+
+:::{.callout appearance="minimal"}
+::::{#lst-declaracion-fn-always-inline lst-cap="Función que se incluye en línea siempre que sea posible (para GCC)"}
+*maximo.h*
+```c
+#ifndef MAXIMO_H
+#define MAXIMO_H
+
+__attribute__((__always_inline__))
+inline int maximo(int a,int b)
+{
+  return a>b ? a:b;
+}
+
+#endif
+```
+*main.c*
+```c
+#include "maximo.h"
+#include <stdio.h>
+int main(void)
+{
+  int datos[]={1,3,5,2,8};
+  const int numDatos = sizeof(datos)/sizeof(*datos);
+  int max = datos[0];
+  for (int i=1;i<numDatos;++i){
+    // El código de maximo se inserta en línea siempre
+    max = maximo(datos[i],max);
+  }
+  printf("El maximo es %d\n",max);
+}
+
+extern inline int maximo(int a,int b);
+```
+::::
+:::
+
+:::{.callout-tip}
+Aún si una función es `__always_inline__`, no será incluida en línea si se llama
+en forma indirecta a través de un puntero a función.
+:::
 
 ## Llamado a función
 
-Para hacer uso de una función se emplea una expresión de llamado a función. Dicha expresión consiste en el identificador (nombre) seguido de la lista de parámetros entre paréntesis, en este caso los paréntesis son el operador "llamado a función". En caso de que la función no acepte parámetros debe usarse una lista vacía "`()`". En una expresión el nombre de la función es evaluado a un puntero a función del tipo correspondiente a su declaración. El operador llamado a función opera sobre dicho puntero para efectuar el llamado.
+Para hacer uso de una función se emplea una expresión de llamado a función. Dicha expresión consiste en el identificador (nombre) seguido de la lista de parámetros entre paréntesis, en este caso los paréntesis son el operador "llamado a función". En caso de que la función no acepte parámetros debe usarse una lista vacía "`()`". En una expresión el nombre de la función es evaluado a un puntero a función del tipo correspondiente a su declaración. El operador llamado a función opera sobre dicho puntero para efectuar el llamado. El @lst-operador-llamado-a-funcion muestra ejemplos de llamados a función.
 
+:::{.callout appearance="minimal"}
+::::{#lst-operador-llamado-a-funcion lst-cap="Operador llamado a función"}
 ``` c
 #include <stdio.h>  // puts, fputs, stderr, EOF
 #include <stdlib.h> // exit
@@ -1337,11 +1416,15 @@ int main(void)
   decir_hola();
 }
 ```
+::::
+:::
 
 ## Arreglos
 
-Un arreglo es un tipo de datos compuesto que contiene varias instancias del tipo de dato base dispuestas en forma contigua en memoria. El declarador de arreglo es indicado por un par de corchetes a la derecha del resto del declarador. Dentro de los corchetes se indica el número de elementos del arreglo. Un arreglo reserva memoria para todos sus elementos.
+Un arreglo es un tipo de datos compuesto que contiene varias instancias del tipo de dato base dispuestas en forma contigua en memoria. El declarador de arreglo es indicado por un par de corchetes a la derecha del resto del declarador. Dentro de los corchetes se indica el número de elementos del arreglo. Un arreglo reserva memoria para todos sus elementos. El @lst-declaracion-arreglos muestra un ejemplo de declaración de arreglo.
 
+:::{.callout appearance="minimal"}
+::::{#lst-declaracion-arreglos lst-cap="Declaración de arreglos"}
 ``` c
   int var1[5], var2[3][2];
   /*
@@ -1352,6 +1435,8 @@ Un arreglo es un tipo de datos compuesto que contiene varias instancias del tipo
    *    bidimensional de 3x2 enteros.
    */
 ```
+::::
+:::
 
 Disposición en memoria arreglos en el ejemplo
 
@@ -1365,8 +1450,10 @@ Disposición en memoria arreglos en el ejemplo
 
 ## Indexado
 
-Un objeto de tipo arreglo produce al evaluarse en una expresión un puntero a su primer elemento (una excepción es si se utiliza como argumento del operador sizeof, que retorna la cantida de memoria reservada por el tipo arreglo). El operador corchete '`[]`' permite acceder un elemento del arreglo según su índice. Se trata de un operador binario. En `a[b]` los argumentos son `a` (usualmente un puntero al primer elemento) y `b` (usualmente un índice entero). La expresión `a[b]` equivale a `*(a+b)` donde `*` es el operador "dirección de" y la suma usa las reglas de aritmética de puntero, por lo cual a la dirección dada por `a` se le suma el índice `b` multiplicado por el tamaño en bytes del tipo base del arreglo. Por ejemplo, si `a` tiene la dirección base `0x20000040` y el tipo base `int32_t`, entonces `a[20]` equivale a `*((int32_t *)0x2000090)`.
+Un objeto de tipo arreglo produce al evaluarse en una expresión un puntero a su primer elemento (una excepción es si se utiliza como argumento del operador sizeof, que retorna la cantida de memoria reservada por el tipo arreglo). El operador corchete '`[]`' permite acceder un elemento del arreglo según su índice. Se trata de un operador binario. En `a[b]` los argumentos son `a` (usualmente un puntero al primer elemento) y `b` (usualmente un índice entero). La expresión `a[b]` equivale a `*(a+b)` donde `*` es el operador *indirección* (`*x` se interpreta como "variable en la dirección `x`") y la suma usa las reglas de aritmética de puntero, por lo cual a la dirección dada por `a` se le suma el índice `b` multiplicado por el tamaño en bytes del tipo base del arreglo. Por ejemplo, si `a` tiene la dirección base `0x20000040` y el tipo base `int32_t`, entonces `a[20]` equivale a `*((int32_t *)0x2000090)`.
 
+:::{.callout appearance="minimal"}
+::::{#lst-operador-indexado lst-cap="Operador indexado `a[b]`"}
 ``` c
 int  A[5]={1,2,3,4,5};
 
@@ -1383,15 +1470,19 @@ int * direccion_quinto_elemento_de_A(void){
   return &A[4];
 }
 ```
-
-:::{.callout-note}
-En el operador indexado se pueden invertir los roles de puntero e índice (`a[b]` y `b[a]` tienen el mismo efecto), **sin embargo esto debe evitarse porque hace el código ilegible**. Esta nota tiene por finalidad poner sobre aviso al lector en caso que encuentre dicho uso en algún código fuente (usualmente constituirá intento de ofuscación de parte del autor de dicho código).
+::::
 :::
 
-## Arreglos como parámetros de funciones
+:::{.callout-note}
+En el operador indexado se pueden invertir los roles de puntero e índice (`a[b]` y `b[a]` tienen el mismo efecto), **sin embargo esto debe evitarse porque hace el código ilegible**. Esta nota tiene por finalidad poner sobre aviso al lector en caso que encuentre dicho uso en algún código fuente (usualmente constituirá intento de ofuscación de parte del autor de dicho código). Para entender el porqué de esto basta con considerar que `x[y]` equivale a `(*(x+y))`.
+:::
 
-Cuando un arreglo participa en una expresión es evaluado a un puntero a su primer elemento, esto ocurre también como parte de un llamado a función. Si uno de los argumentos en el llamado a función es especificado como un arreglo equivale a especificar un puntero al primer elemento.
+## Arreglos como argumentos de funciones
 
+Cuando un arreglo participa en una expresión es evaluado a un puntero a su primer elemento, esto ocurre también como parte de un llamado a función. Si uno de los argumentos en el llamado a función es especificado como un arreglo equivale a especificar un puntero al primer elemento. El @lst-ejemplo-arreglo-como-argumento muestra ejemplos de funciones que operan sobre arreglos. Notar que sus argumentos son en realidad punteros, incluso si se utilizó notación de arreglo al declararlos.
+
+:::{.callout appearance="minimal"}
+::::{#lst-ejemplo-arreglo-como-argumento lst-cap="Funciones que operan sobre arreglos"}
 ``` c
 // Las dos declaraciones son equivalentes
 // Nota: Hay que especificar la longitud del arreglo en algún otro argumento, porque
@@ -1410,13 +1501,15 @@ void matmul(int n, int k, int m,
   for (int fila=0;fila<n;++fila){
     for (int col=0;col<n;++col){
       R[fila][col] = 0;
-      for (i=0;i<k;++i){
+      for (int i=0;i<k;++i){
         R[fila][col] += A[fila][k]*B[k][col];
       }
     }
   }
 }
 ```
+::::
+:::
 
 ::: callout-caution
 Los punteros se pueden indexar como si fuesen arreglos, sin embargo **no son arreglos**.\
@@ -1436,8 +1529,12 @@ Si un puntero `P` apunta a un arreglo `A` entonces:
 - `sizeof A` (tamaño en memoria de A) es el espacio ocupado por A en memoria.
 - `A` es la **dirección** del arreglo y por lo tanto no puede modificarse.
 - `P` es el **valor** del puntero y sí puede modificarse.
+
+El @lst-punteros-y-arreglos ilustra estas diferencias.
 :::
 
+:::{.callout appearance="minimal"}
+::::{#lst-punteros-y-arreglos lst-cap="Punteros y arreglos"}
 ``` c
 #include <stdio.h>  // puts
 #include <assert.h> // assert
@@ -1459,6 +1556,8 @@ int main(void)
   return 0;
 }
 ```
+::::
+:::
 
 ::: callout-note
 Puedes ejecutar una versión de este ejemplo [aquí](https://onlinegdb.com/FPG8GAUNY).
@@ -1466,26 +1565,33 @@ Puedes ejecutar una versión de este ejemplo [aquí](https://onlinegdb.com/FPG8G
 
 ## Punteros {#sec-punteros}
 
-Un puntero es un tipo derivado cuyo valor es una dirección de memoria que, a su vez, contiene un objeto del tipo base. El tipo base puede ser cualquier otro tipo.
+Un puntero es un tipo derivado cuyo valor es una dirección de memoria que, a su vez, contiene un objeto del tipo base. El tipo base puede ser cualquier otro tipo. El @lst-declaraciones-de-punteros muestra declaraciones de punteros.
 
 ::: callout-caution
 El tipo puntero se indica con un asterisco a la izquierda del identificador. Debido a la precedencia de operaciones, el asterisco se procesa *después* que los paréntesis y los corchetes que indican los tipos función y arreglo respectivamente. En estos casos deben usarse paréntesis para forzar que se evalúe primero el indicador de puntero.
 :::
 
+:::{.callout appearance="minimal"}
+::::{#lst-declaraciones-de-punteros lst-cap="Declaraciones de punteros"}
 ``` c
 int x=5, *a=&x, **b=&a, ***c=&b;
 /* x es una variable entero
- * a es una variable puntero a entero
- * b es una variable puntero a puntero a entero
- * c es una variable puntero a puntero a puntero a entero
+ * a es una variable puntero a entero, inicializada con la dirección de x
+ * b es una variable puntero a puntero a entero, inicializada con la dirección
+ *   de a
+ * c es una variable puntero a puntero a puntero a entero, inicializada con la
+ *   dirección de b
  */
  int *x[4], (*y)[6];
  // x es un arreglo de cuatro punteros a entero.
- // y es un puntero a arreglo de cuatro enteros.
+ // y es un puntero a arreglo de cuatro enteros. Notar los paréntesis. El 
+ // declarador de arreglo tiene mayor precedencia que el de puntero
 ```
+::::
+:::
 
 ::: callout-tip
-Notar en el ejemplo la diferencia entre x e y. La variable x almacena cuatro punteros a entero, mientras que y es un puntero a un arreglo de seis enteros.
+Notar en el @lst-declaraciones-de-punteros la diferencia entre x e y. La variable x almacena cuatro punteros a entero, mientras que y es un puntero a un arreglo de seis enteros.
 
 `x[0]` es un puntero a entero.\
 `y[0]` es un arreglo de 4 enteros.
@@ -1552,11 +1658,11 @@ Las variables de solo lectura (de tipo calificado por `const`) deben ser inicial
 En "`int const *A;`" la variable `A` no es calificada por `const`, sino la posición de memoria a la que apunta. Por eso no hace falta inicializarla al definir.
 :::
 
+::: callout
 ``` c
 void (*const suma)(Vector const *self,const Vector *otro, Vector *resultado) = misuma;
 ```
 
-::: callout
 Identificador: `suma` → *`suma` es...*\
 Izquierda: `*const` → *...un puntero constante a...*\
 Fuera de los paréntesis:\
@@ -1569,6 +1675,7 @@ Izquierda: `void` → *...y no retorna valor.*
 Como `suma` es un tipo ***calificado constante***, debe ser inicializada al momento de su declaración.
 :::
 
+::: callout
 ``` c
 struct Pin_VT{
   void (*const modo_salida)(Pin *);
@@ -1579,11 +1686,11 @@ struct Pin_VT{
 };
 ```
 
-::: callout
 No hay identificador → *No declara ningún objeto, ...*\
 Izquierda: `struct Pin_VT{...}` → *...pero define una estructura de etiqueta `Pin_VT` cuyos miembros son: `modo_salida` y `modo_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y no retorna valor; `set_estado`, un puntero constante a función que acepta un argumento puntero a `Pin`, un argumento tipo `bool` y no retorna valor; `get_estado` y `get_entrada`, dos punteros constantes a función que acepta un argumento puntero a `Pin` y retorna un valor tipo `bool`.*
 :::
 
+::: callout
 ``` c
 typedef enum {
   PIN_IN_ANALOGICO = 0b0000,
@@ -1604,24 +1711,38 @@ typedef enum {
 } ModoEntrada;
 ```
 
-::: callout
 Identificador `ModoEntada` → *`ModoEntrada` es...*\
 Izquierda: `typedef enum {...}` → *un tipo definido por el usuario, equivalente a la enumeración anónima especificada (además, se definen las correspondientes constantes).*
 :::
 
 ## Inicializadores de arreglos y estructuras
 
+Los arreglos de tipo caracter pueden inicializarse con un literal de cadena de caracteres (una cadena entre comillas dobles). Tanto los arreglos como las estructuras pueden inicializarse con una lista de inicialización, que es una lista entre corchetes con los valores de cada celda del arreglo o miembro de la estructura en el orden que fueron declarados. En el caso que un miembro o celda sea a su vez un arreglo o estructura se especificará con su propia lista de inicialización. La inicialización de unión es de la misma forma, pero en ese caso solo puede especificarse el primer miembro (en la unión solo puede haber un miembro válido por vez, y con este tipo de inicializador debe ser el primero).
+
+Desde C99 pueden utilizarse designadores en las listas de inicialización. El designador está a la izuierda de un valor e indica a que celda del arreglo o miembro de la estructura o unión inicializa. El designador de celda de arreglo consiste en el índice de la celda entre corchetes seguido de un signo igual. El designador de miembro de unión o estructura es un punto seguido del nombre del miembro y el signo igual.
+
+El @lst-inicializadores-arreglo-estructura muestra ejemplos concretos de inicializadores de estructuras, arreglos y uniones. 
+
+:::{.callout appearance="minimal"}
+::::{#lst-inicializadores-arreglo-estructura lst-cap="Inicializadores de arreglo y estructura"}
 ``` c
 typedef struct MiStruct {int a;int b;int c;} MiStruct;
 typedef union MiUnion {char b[4];short h[2];long w;} MiUnion;
 // Lista de inicialización
-int arreglo_1[] = {1,2,3,4};  // Toma la dimensión de la lista
-int arreglo_2[8] = {1,2,3,4}; // Los miembros no especificados se inicializan en 0
-int arreglo_3[][3] = {{1,2},{1,3,4}}; // Solo puede omitirse la primera dimensión
-char arreglo4[] = "ABC"; // equivale a {'A','B','C','0'}
-MiStruct estructura_1 = {3,5,7}; // a=3, b=5, c=7
-MiStruct estructura_2 = {1};   // a=1, b=0, c=0
-MiUnion  union_1 = {{1,2,3,4}};  // En una unión solo puede inicializarse así el primer miembro
+// Toma la dimensión de la lista
+int arreglo_1[] = {1,2,3,4}; 
+// Los miembros no especificados se inicializan en 0
+int arreglo_2[8] = {1,2,3,4};
+// Solo puede omitirse la primera dimensión
+int arreglo_3[][3] = {{1,2},{1,3,4}};
+// equivale a {'A','B','C','0'}
+char arreglo4[] = "ABC";
+// a=3, b=5, c=7
+MiStruct estructura_1 = {3,5,7};
+// a=1, b=0, c=0
+MiStruct estructura_2 = {1};
+// En una unión solo puede inicializarse así el primer miembro
+MiUnion  union_1 = {{1,2,3,4}};
 // Inicializador con designación
 // inicializa {3,4,0,0,0,23,24,0,-4,0,0,0,0,0,0}
 int arreglo_5[15] = {[5]=23,24,[8]=-4,[0]=3,4};
@@ -1629,7 +1750,8 @@ int arreglo_5[15] = {[5]=23,24,[8]=-4,[0]=3,4};
 int arreglo_6[3][2] = {[1]={1,2}};
 // inicializa {{1,0},{0,0},{0,2}}
 int arreglo_7[3][2] = {[0][0]=1,[2][1]=2};
-MiStruct estructura_3 = {.b=3,.a=-2}; // a=-2, b=3, c=0
+// a=-2, b=3, c=0
+MiStruct estructura_3 = {.b=3,.a=-2};
 // Única manera de inicializar un miembro de una union que no sea el primero
 // w es -7
 MiUnion union_2 = {.w=-7};
@@ -1638,15 +1760,19 @@ MiUnion union_3 = {.h[1]=4};
 // b es {0,0,5,7}
 MiUnion union_4 = {.b={[2]=5,7}};
 ```
+::::
+:::
 
 ## Literales compuestos
 
-Los literales compuestos crean objetos de tipo estructura, unión o arreglo. Para crearlos se especifica el tipo entre paréntesis y se ubica a continuación un inicializador con designación.
+Los literales compuestos crean objetos de tipo estructura, unión o arreglo. Para crearlos se especifica el tipo entre paréntesis y se ubica a continuación una lista de inicialización (idéntica a la utilizada para inicializar una variable). El @lst-literales-compuestos tiene ejemplos de literales compuestos.
 
 ::: callout-warning
 Los objetos creados por los literales compuestos **solo son válidos en el ámbito donde fueron creados**. Corresponden a variables automáticas anónimas si fueron creados dentro de un bloque de código y variables static si fueron creados en el ámbito de archivo (fuera de una función). En particular no se debe retornar nunca la dirección de un objeto automático (variable local), pues la memoria es liberada al salir del bloque donde fue reservada. Lo que sí se puede retornar es **el valor** de un literal compuesto tipo estructura o unión.
 :::
 
+:::{.callout appearance="minimal"}
+::::{#lst-literales-compuestos lst-cap="Literales compuestos"}
 ``` c
 #include <assert.h>
 typedef struct {char nombre[20];char apellido[20];int edad;} Ficha;
@@ -1679,6 +1805,8 @@ Vec2D ejemplo(void){
   return (Vec2D){5,3};
 }
 ```
+::::
+:::
 
 ## Expresiones
 
