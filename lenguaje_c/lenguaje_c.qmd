@@ -1922,14 +1922,18 @@ int main(void){
 
 ## Operadores de precedencia 1
 
-Son los operadores de post-incremento, post-decremento, llamado a función, direccionamiento de arreglo, acceso a miembro, acceso a miembro por puntero y literal compuesto. Se ejecutan antes que cualquier otro operador (excepto agrupación con paréntesis).
-
-### 
+Son los operadores de post-incremento (`x++`), post-decremento (`x--`), llamado a función (`fn(2,4)`), direccionamiento de arreglo (`x[3]`), acceso a miembro (`x.y`), acceso a miembro por puntero (`x->y`) y literal compuesto (`(int[3]){1,2,3}`). Se ejecutan antes que cualquier otro operador (excepto agrupación con paréntesis).
 
 ::: callout-note
-La asociatividad de estos operadores es de ***izquierda a derecha***.
+La asociatividad de estos operadores es de ***izquierda a derecha***. Ejemplos:\
+`x.y.z` equivale a `(x.y).z`\
+`x->y++` equivale a `(x->y)++`\
+`fx(a)(b)` equivale a `(fx(a))(b)` (fx retorna un puntero a función)\
+`x[3][2]` equivale a `(x[3])[2]`
 :::
 
+:::{.callout appearance="minimal"}
+::::{#lst-ejemplo-operadores-precedencia-1 lst-cap="Ejemplo de operadores de precedencia 1"}
 ``` c
 #include <stdio.h>
 #include <assert.h>
@@ -1966,15 +1970,22 @@ int main(void){
   return 0;
 }
 ```
+::::
+:::
 
 ## Operadores de precedencia 2
 
-Son operadores de pre-incremento, pre-decremento, signos positivo y negativo, NOT booleano, NOT bit a bit, conversión de tipo, indirección (acceso al destino de un puntero), dirección (dirección de memoria de un objeto) y sizeof (tamaño de un objeto).
+Son operadores de pre-incremento (`++x`), pre-decremento (`--x`), signos positivo (`+x`) y negativo (`-x`), NOT booleano (`!x`), NOT bit a bit (`~x`), conversión de tipo (`(int)x`), indirección (acceso al destino de un puntero, `*x`), dirección (dirección de memoria de un objeto, `&x`) y *sizeof* (tamaño de un objeto, `sizeof x`). Son evaluados inmediatamente después de evaluar los operadores de precedencia 1.
 
 ::: callout-note
-La asociatividad de estos operadores es de ***derecha a izquierda***.
+La asociatividad de estos operadores es de ***derecha a izquierda***. Ejemplos:\
+`(unsigned)-x` equivale a `(unsigned)(-x)`\
+`**x` equivale a `*(*x)`\
+`*++*y` equivale a `*(++(*y))`\
 :::
 
+:::{.callout appearance="minimal"}
+::::{#lst-ejemplo-operadores-precedencia-2 lst-cap="Ejemplo de operadores de precedencia 2"}
 ``` c
 #include <assert.h>
 #include <stdint.h>
@@ -2011,3 +2022,233 @@ int main(void){
   return 0;
 }
 ```
+::::
+:::
+
+## Operadores de precedencia 3
+
+Son los operadores producto (`x*y`), cociente (`x/y`) y resto (`x%y`). Son evaluados inmediatamente después de los operadores de precedencia 2.
+
+:::{.callout-note}
+La asociatividad de estos operadores es de ***izquierda a derecha***. Ejemplos:\
+`x*y/z` equivale a `(x*y)/z`\
+`x/y*z%t` equivale a `((x/y)*z)%t`
+:::
+
+:::{.callout appearance="minimal"}
+::::{#lst-ejemplo-operadores-precedencia-3 lst-cap="Ejemplo de operadores de precedencia 3"}
+``` c
+#include <assert.h>
+#include <stdint.h>
+int main(void){
+  int x,y,z;
+  x = 5/3*2;
+  y = (5/3)*2;
+  assert(x == y);
+  z = 9%2*5; // 9%2 es 1
+  assert(z == 5);
+  return 0;
+}
+```
+::::
+:::
+
+## Operadores de precedencia 4
+
+Son los operadores suma (`x+y`) y resta (`x-y`). Se evalúan inmediatamente después que los de precedencia 3 (producto, cociente y módulo).
+
+:::{.callout-note}
+La asociatividad de estos operadores es de ***izquierda a derecha***. Ejemplo:\
+`x-y+z` equivale a `(x-y)+z`\
+:::
+
+## Operadores de precedencia 5
+
+Son los operadores desplazamiento de bit a izquierda (`x<<y`) y derecha (`x>>y`). Se evalúan inmediatamente *después que los operadores suma y resta*.
+
+:::{.callout-note}
+La asociatividad de estos operadores es de ***izquierda a derecha***. Ejemplo:\
+`x<<y<<z` equivale a `(x<<y)<<z`\
+:::
+
+:::{.callout-warning}
+La precedencia de estos operadores puede ser anti-intuitiva. Ejemplo:\
+`x<<y+3` equivale a `x<<(y+3)`\
+`x+3<<y` equivale a `(x+3)<<y`
+
+Recomendamos utilizar paréntesis explícitamente siempre que se utilizen este tipo de operador. Ejemplos:\
+`x<<(y+3)` es más claro\
+`x+(3<<y)` es probablemente lo que se quería significar antes
+:::
+
+## Operadores de precedencia 6
+
+Son los operadores relacionales, menor que (`x<y`), menor o igual que (`x<=y`), mayor que (`x>y`) y mayor o igual que (`x>=y`). El resultado de la evaluación de estos operadores es un valor booleano (`0` para falso o `1` para verdadero).
+
+:::{.callout-warning}
+Usualmente no debería haber operadores relacionales consecutivos. Dicho esto, la asociatividad de estos operadores es de ***izquierda a derecha***. Si no se tiene cuidado puede dar lugar a comportamientos anti-intuitivos o sorprendentes. Ejemplo:\
+`3<2<1` equivale a `(3<2)<1`, que evalúa a `1<1` y luego `0`.
+
+Además, los operadores menor o igual que y mayor o igual que son formados por dos caracteres. Si se insertara un espacio daría lugar a un error.
+:::
+
+## Operadores de precedencia 7
+
+Son los operadores igual que (`x==y`) y distinto que (`x!=y`). Se evalúan luego de evaluar los operadores relacionales.
+
+:::{.callout-warning}
+Es facil confundir el operador igual que `==` con el operador de asignación `=` lo cual puede dar lugar a errores lógicos en la programación. La asociatividad es de ***izquierda a derecha***, pero nuevamente **no debería haber operadores de este tipo seguidos**. Ejemplo:\
+`1==3==0` equivale a `(1==3)==0` que evalúa a `0==0` y `1`  
+:::
+
+## Operador de precedencia 8
+
+Es el operador de conjunción (Y, AND) bit a bit. Tiene la forma `x&y`. El i-ésimo bit del resultado es la conjunción de los i-ésimos bit de los operandos $$(x\&y)_{<i>}=x_{<i>} \wedge y_{<i>}$$
+
+:::{.callout-note}
+La asociatividad de este operador es de *izquierda a derecha*, pero como es el único en su precedencia y se trata de una operación asociativa, no es relevante en la práctica.
+:::
+
+:::{.callout-warning}
+Este opreador se evalúa luego que los relacionales y de igualdad, esto puede dar lugar a comportamientos inesperados. Cuando aparecen estos operadores en la misma expresión debe utilizarse paréntesis explícitos por claridad. Ejemplo:`
+`x&7<3` equivale a `x&(7<3)` que evalúa a `x&0` o `0`. Seguramente esto no es lo buscado.
+`(x&7)<3` compara el valor de los primeros 3 bit de x con 3, que es seguramente lo buscado en ese caso.
+:::
+
+## Operador de precedencia 9
+
+Es el operador de disyunción exclusiva (O exclusivo, XOR) bit a bit. Tiene la forma `x^y`. El i-ésimo bit del resultado es la disyunción exclusiva de los i-ésimos bit de los operandos $$ (x^y)_{<i>}=x_{<i>} \oplus y_{<i>} $$
+
+:::{.callout-warning}
+En otros lenguajes el operador `^` se utiliza para exponenciación. C *no tiene operador de exponenciación*. Vale la misma consideración que el operador `&` respecto del uso de paréntesis cuando en la expresión hay operaciones relacionales. 
+:::
+
+## Operador de precedencia 10
+
+Es el operador de disyunción (O, OR) bit a bit. Tiene la forma `x|y`. El i-ésimo bit del resultado es la disyunción de los i-ésimos bit de los operandos $$ (x|y)_{<i>}=x_{<i>} \vee y_{<i>}$$
+
+:::{.callout-warning}
+Valen las mismas advertencias que para los operadores `&` y `^`.
+:::
+
+## Operador de precedencia 11
+
+Es el operador Y lógico booleano `x&&y`. Este operador evalúa sus argumentos como valores lógicos, `0` es falso y cualquier otro valor es verdadero. Es un operador llamado de "cortocircuito", primero evalúa su argumento izquierdo y, si este es verdadero, recién evalúa su argumento derecho. Es uno de los pocos casos donde el orden de evaluación es garantizado (garantiza que si el operando izquierdo es falso *nunca evaluará el derecho*). Esta propiedad es importante para evitar realizar operaciones inválidas o acceso a punteros nulos. Siempre el pre-requisito se evalúa antes de realizar la operación y la operación no se realiza si este no se cumple. Su resultado será siempre `1` verdadero o `0` falso.
+
+:::{.callout-warning}
+Este operador se evalúa luego de todos los operadores relacionales, aritméticos y lógicos bit a bit. Esto es lo que se espera normalmente, sin embargo es siempre conveniente usar paréntesis cuando debe aclararse el orden de operaciones. Además siempre usar paréntesis si se mezclan el operador O booleano (`x||y`) con este operador. Ejemplos:\
+`x>3 && y<2` equivale a `(x>3) && (y<2)`, que es lo que se espera normalmente. Y si `x<3` fuese falso no se evaluaría `y<2`.\
+`x<3 && y<2 || z<4 && k>1` equivale a `((x<3) && (y<2)) || ((z<4) && (k>1))` pero esto no es claro.\
+`(x<3 && y<2) || (z<4 && k>1)` es una expresión más clara y preferible a la anterior
+:::
+
+:::{.callout-note}
+La asociatividad del operador es de ***izquierda a derecha***, y garantiza el orden de evaluación. Ejemplos:\
+`x && fn && fn(z)/x > 2` equivale a `(x && fn) && (fn(z)/x > 2)`, y la última expresión solo se ejecutará si `x` y `fn` (puntero a función) son distintos de cero.
+:::
+
+## Operador de precedencia 12
+
+Es el operador O lógico booleano `x||y`. Se evalúa luego del operador Y lógico booleano y tiene una propiedad de evaluación análoga. Si el argumento izquierdo es verdadero *no se evalúa el argumento derecho*. Su resultado será siempre `1` verdadero o `0` falso.
+
+:::{.callout-warning}
+Vale la misma advertencia que para el operador `&&`
+:::
+
+:::{.callout-note}
+La asociatividad del operador es de ***izquierda a derecha***, y garantiza el orden de evaluación. Ejemplos:\
+`x == 0 || 3/x > 5` equivale a `(x == 0) || (3/x > 5)`, y la última expresión no se ejecuta en caso que x sea cero.
+:::
+
+## Operador de precedencia 13
+
+Es el operador condicional (`expr1 ? expr2 : expr3`). Es un operador ternario (de tres argumentos). Primero evalúa su primer argumento (`expr1`). Si el resultado es *verdadero* entonces evalúa el segundo argumento y retorna su valor (*y no evalúa el tercero*). Si el resultado es *falso* entonces evalúa el tercer argumento y retorna su valor (*y no evalúa el segundo*). Este opreador se evalúa luego de los operadores lógicos booleanos, así que en la mayoría de los casos es innecesario el uso de paréntesis. Suele ser conveniente, sin embargo, utilizar paréntesis en el primer argumento por claridad. Si el operador participa como parte de una expresión más grande deberemos siempre rodearlo de paréntesis.
+
+:::{.callout-note}
+La asociatividad del operador condicional es de ***derecha a izquierda***. Ejemplo:\
+`x ? 1 : y ? 4 : 2` equivale a `x ? 1 : (y ? 4 : 2)`\
+`x ? y ? 5 : 7 : 3` equivale a `x ? (y ? 5 : 7) : 3`\
+`x ? y ? 3 : 2 : z ? 4 : 1` equivale a `x ? (y ? 3 : 2) : (z ? 4 : 1)`
+
+Al ser un operador ternario es más dificil evaluar la asociatividad. Para hacerlo buscamos de derecha a izquierda los signos de interrogación y rodeamos los operandos asociados en paréntesis.
+
+El operador condicional es una mejor opción que el uso de estructuras condicionales (if-else) cuando el único efecto es determinar un valor. El @lst-ejemplo-operador-condicional muestra un ejemplo de este uso.
+:::
+
+:::{.callout appearance="minimal"}
+::::{#lst-ejemplo-operador-condicional lst-cap="Ejemplo de uso operador condicional"}
+```c
+enum ClaseCaracter{
+  LETRA_MAYUSCULA,
+  LETRA_MINUSCULA,
+  NUMERO,
+  PUNTUACION,
+  ESPECIAL,
+  EXTENDIDO
+};
+
+ClaseCaracter obtClase1(char a)
+{
+  return a >= 'A' && a <= 'Z' ? LETRA_MAYUSCULA :
+         a >= 'a' && a <= 'z' ? LETRA_MINUSCULA :
+         a >= '0' && a <= '9' ? NUMERO          :
+         a < 32 || a == 127   ? ESPECIAL        :
+         a > 127              ? EXTENDIDO       :
+                                PUNTUACION;
+}
+// Exactamente igual a obtClase1, explicita agrupación con paréntesis
+ClaseCaracter obtClase2(char a)
+{
+  return a >= 'A' && a <= 'Z' ? LETRA_MAYUSCULA :
+         (a >= 'a' && a <= 'z' ? LETRA_MINUSCULA :
+          (a >= '0' && a <= '9' ? NUMERO :
+           (a < 32 || a == 127 ? ESPECIAL :
+            (a > 127 ? EXTENDIDO :PUNTUACION))));
+}
+```
+::::
+:::
+
+## Operadores de precedencia 14
+
+Son los operadores de asignación (`x=1`) y asignación compuesta (`x+=1`, `x/=3`, etc.). Estos operadores se evalúan luego del operador condicional y todos los demás operadores excepto el operador coma `,`. Su operando izquierdo debe ser un objeto al cual pueda asignarse un valor (en terminología de C se denomina *l-valor modificable*). Un l-valor modificable puede ser *una variable no const*, *el resultado de dereferenciar un puntero (o arreglo) no const*, *el resultado de indexar un puntero (o arreglo) no const* o *el resultado del acceso a un miembro de estructura o unión que no sea const*. El efecto del operador asignación es asignar el valor resultante de evaluar su operando derecho como nuevo valor del objeto identificado por su operando izquierdo. El valor de la expresión de asignación en sí es el mismo valor que se usó en la asignación. Por ejemplo, `2*(x=3)` asigna a la variable `x` el valor `3` y produce el valor `6`.
+
+Los operadores de asignación compuesta son `+=`, `-=`, `*=`, `/=`, `%=`, `>>=`, `<<=`, `&=`, `|=` y `^=`. Estos operadores realizan la operación indicada por el operador a la izquierda del signo igual entre el valor actual del objeto a modificar y el valor del operando derecho, el resultado es usado como nuevo valor del objeto y valor final de la expresión.
+
+:::{.callout-tip}
+La asociatividad de los operadores de asignación y asignación compuesta es de ***derecha a izquierda***. Además debemos recordar que el valor que producen es el mismo que asignan. Ejemplos:\
+`x=y=z=t=3` equivale a `x=(y=(z=(t=3)))` y asigna el valor `3`a las variables `x`, `y`, `z` y `t`.\
+`x/=y-=z+=t*=2` equivale a `x/=(y-=(z+=(t*=2)))` y asignará `t*2` como nuevo valor de `t`, `z+t` *con el nuevo valor de `t`* a `z`, `y-z` *con el nuevo valor de `z`* a `y`, `x/y` *con el nuevo valor de `y`* a `x`.
+:::
+
+:::{.callout-warning}
+El signo igual es utilizado también para indicar la *inicialización de variables*, sin embargo **inicialización no es asignación**. La inicialización *da el valor inicial a una variable* y la asignación *modifica el valor de una variable existente*. Notablemente ***las variables `const` deben inicializarse pero no pueden ser sujetas a asignación***
+:::
+
+:::{.callout appearance="minimal"}
+::::{#lst-ejemplo-asignacion lst-cap="Operadores de asignación <https://onlinegdb.com/eSQ6q_LYc>"}
+```c
+#include <stdio.h>
+#include <assert.h>
+int main(void)
+{
+  int x,y,z,t;
+  x=y=z=t=3;
+  assert(3 == x && 3 == y && 3 == z && 3 == t);
+  x/=y-=z+=t*=2;
+  assert(3*2 == t && 3+t == z && 3-z == y && 3/y == x);
+  printf("x %d y %d z %d t %d\n",x,y,z,t);
+  return 0;
+}
+```
+::::
+:::
+
+## Operador de precedencia 15
+
+El operador coma (`exp1,exp2`) es el de menor precedencia (el último en evaluarse). Evalúa en primer lugar la expresión izquierda y descarta el valor resultante. Luego evalúa la expresión derecha y produce como valor final el resultado de dicha expresión. Tiene la garantía de que siempre se evalúe primero la expresión izquierda, luego la derecha. Al usar el operador coma, la expresión izquierda es evaluada por sus efectos secundarios (operación de asignación o llamado a función).
+
+:::{.callout-tip}
+La asociatividad del operador coma es de ***izquierda a derecha***. Por ejemplo:\
+`i++,j+=9,x=a[i,j]` equivale a `(i++,j+=9),x=a[i][j]`. Incrementa i, luego incrementa j y finalmente asigna a la variable x el valor resultante de las operaciones de indexado, que se efectúan con los nuevos valores de `i` y `j`
+:::
